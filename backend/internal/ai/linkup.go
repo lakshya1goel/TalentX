@@ -40,20 +40,19 @@ func SearchJobsLinkUp(query string) ([]models.Job, error) {
 	respBody, _ := io.ReadAll(resp.Body)
 
 	var parsed struct {
-		Data []models.LinkupJob `json:"data"`
+		Results []models.LinkupJob `json:"results"`
 	}
 	if err := json.Unmarshal(respBody, &parsed); err != nil {
 		return nil, err
 	}
 
 	jobs := []models.Job{}
-	for _, r := range parsed.Data {
+	for _, r := range parsed.Results {
 		jobs = append(jobs, models.Job{
-			Title:    r.Title,
-			Company:  r.Source,
-			Location: "",
-			URL:      r.URL,
-			Source:   "LinkUp",
+			Title:       r.Title,
+			Description: r.Snippet,
+			URL:         r.URL,
+			Source:      "LinkUp",
 		})
 	}
 
