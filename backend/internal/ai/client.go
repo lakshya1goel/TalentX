@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/lakshya1goel/job-assistance/internal/models"
+	"github.com/lakshya1goel/job-assistance/internal/dtos"
 	"google.golang.org/genai"
 )
 
@@ -23,7 +23,7 @@ func NewAIClient(ctx context.Context, apiKey string) *AIClient {
 	return &AIClient{Client: client}
 }
 
-func (a *AIClient) GetJobsFromResume(ctx context.Context, pdfBytes []byte) ([]models.Job, error) {
+func (a *AIClient) GetJobsFromResume(ctx context.Context, pdfBytes []byte) ([]dtos.Job, error) {
 	prompt := a.Prompt()
 
 	parts := []*genai.Part{
@@ -55,17 +55,17 @@ func (a *AIClient) GetJobsFromResume(ctx context.Context, pdfBytes []byte) ([]mo
 		return nil, fmt.Errorf("failed to generate content: %w", err)
 	}
 
-	var allJobs []models.Job
-	
+	var allJobs []dtos.Job
+
 	fmt.Println("Processing AI response...")
-	
+
 	for _, candidate := range result.Candidates {
 		for _, part := range candidate.Content.Parts {
-			
+
 			if part.FunctionCall != nil {
 				functionCall := part.FunctionCall
 				fmt.Printf("AI wants to call: %s\n", functionCall.Name)
-				
+
 				jobs := a.callJobAPI(functionCall)
 				allJobs = append(allJobs, jobs...)
 			}
@@ -75,11 +75,11 @@ func (a *AIClient) GetJobsFromResume(ctx context.Context, pdfBytes []byte) ([]mo
 	return allJobs, nil
 }
 
-func (a *AIClient) callJobAPI(functionCall *genai.FunctionCall) []models.Job {
+func (a *AIClient) callJobAPI(functionCall *genai.FunctionCall) []dtos.Job {
 	query, ok := functionCall.Args["query"].(string)
 	if !ok {
 		fmt.Println("No query found")
-		return []models.Job{}
+		return []dtos.Job{}
 	}
 
 	fmt.Printf("🔍 Searching for: %s\n", query)
@@ -89,7 +89,7 @@ func (a *AIClient) callJobAPI(functionCall *genai.FunctionCall) []models.Job {
 		jobs, err := SearchJobsJSearch(query)
 		if err != nil {
 			fmt.Printf("JSearch error: %v\n", err)
-			return []models.Job{}
+			return []dtos.Job{}
 		}
 		fmt.Printf("JSearch found %d jobs\n", len(jobs))
 		return jobs
@@ -98,13 +98,13 @@ func (a *AIClient) callJobAPI(functionCall *genai.FunctionCall) []models.Job {
 		jobs, err := SearchJobsLinkUp(query)
 		if err != nil {
 			fmt.Printf("LinkUp error: %v\n", err)
-			return []models.Job{}
+			return []dtos.Job{}
 		}
 		fmt.Printf("LinkUp found %d jobs\n", len(jobs))
 		return jobs
 
 	default:
 		fmt.Printf("Unknown function: %s\n", functionCall.Name)
-		return []models.Job{}
+		return []dtos.Job{}
 	}
 }

@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/lakshya1goel/job-assistance/internal/models"
+	"github.com/lakshya1goel/job-assistance/internal/dtos"
 )
 
-func SearchJobsLinkUp(query string) ([]models.Job, error) {
+func SearchJobsLinkUp(query string) ([]dtos.Job, error) {
 	apiKey := os.Getenv("LINKUP_API_KEY")
 	url := os.Getenv("LINKUP_API_URL")
 
@@ -40,15 +40,15 @@ func SearchJobsLinkUp(query string) ([]models.Job, error) {
 	respBody, _ := io.ReadAll(resp.Body)
 
 	var parsed struct {
-		Results []models.LinkupJob `json:"results"`
+		Results []dtos.LinkupJob `json:"results"`
 	}
 	if err := json.Unmarshal(respBody, &parsed); err != nil {
 		return nil, err
 	}
 
-	jobs := []models.Job{}
+	jobs := []dtos.Job{}
 	for _, r := range parsed.Results {
-		jobs = append(jobs, models.Job{
+		jobs = append(jobs, dtos.Job{
 			Title:       r.Title,
 			Description: r.Snippet,
 			URL:         r.URL,

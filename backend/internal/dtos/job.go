@@ -1,4 +1,6 @@
-package models
+package dtos
+
+import "time"
 
 type JSearchJob struct {
 	Title       string `json:"job_title"`
@@ -22,4 +24,10 @@ type Job struct {
 	Description string `json:"description,omitempty"`
 	URL         string `json:"url"`
 	Source      string `json:"source"`
+}
+
+type ErrorResponse struct {
+	Error     string    `json:"error"`
+	Success   bool      `json:"success"`
+	Timestamp time.Time `json:"timestamp"`
 }

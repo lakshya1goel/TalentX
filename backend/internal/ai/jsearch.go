@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/lakshya1goel/job-assistance/internal/models"
+	"github.com/lakshya1goel/job-assistance/internal/dtos"
 )
 
-func SearchJobsJSearch(query string) ([]models.Job, error) {
+func SearchJobsJSearch(query string) ([]dtos.Job, error) {
 	key := os.Getenv("RAPIDAPI_KEY")
 	host := os.Getenv("RAPIDAPI_HOST")
 
@@ -31,7 +31,7 @@ func SearchJobsJSearch(query string) ([]models.Job, error) {
 	body, _ := io.ReadAll(resp.Body)
 
 	var parsed struct {
-		Data []models.JSearchJob `json:"data"`
+		Data []dtos.JSearchJob `json:"data"`
 	}
 	fmt.Println(string(body))
 	if err := json.Unmarshal(body, &parsed); err != nil {
@@ -39,9 +39,9 @@ func SearchJobsJSearch(query string) ([]models.Job, error) {
 		return nil, err
 	}
 
-	jobs := []models.Job{}
+	jobs := []dtos.Job{}
 	for _, job := range parsed.Data {
-		jobs = append(jobs, models.Job{
+		jobs = append(jobs, dtos.Job{
 			Title:    job.Title,
 			Company:  job.Company,
 			Location: job.Location,
