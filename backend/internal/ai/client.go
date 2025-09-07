@@ -23,8 +23,8 @@ func NewAIClient(ctx context.Context, apiKey string) *AIClient {
 	return &AIClient{Client: client}
 }
 
-func (a *AIClient) GetJobsFromResume(ctx context.Context, pdfBytes []byte) ([]dtos.Job, error) {
-	prompt := a.Prompt()
+func (a *AIClient) GetJobsFromResume(ctx context.Context, pdfBytes []byte, locationPreference dtos.LocationPreference) ([]dtos.Job, error) {
+	prompt := a.PromptWithLocation(locationPreference)
 
 	parts := []*genai.Part{
 		{
@@ -66,7 +66,7 @@ func (a *AIClient) GetJobsFromResume(ctx context.Context, pdfBytes []byte) ([]dt
 				functionCall := part.FunctionCall
 				fmt.Printf("AI wants to call: %s\n", functionCall.Name)
 
-				jobs := a.callJobAPI(functionCall)
+				jobs := a.callJobAPIWithLocation(functionCall)
 				allJobs = append(allJobs, jobs...)
 			}
 		}
@@ -75,14 +75,14 @@ func (a *AIClient) GetJobsFromResume(ctx context.Context, pdfBytes []byte) ([]dt
 	return allJobs, nil
 }
 
-func (a *AIClient) callJobAPI(functionCall *genai.FunctionCall) []dtos.Job {
+func (a *AIClient) callJobAPIWithLocation(functionCall *genai.FunctionCall) []dtos.Job {
 	query, ok := functionCall.Args["query"].(string)
 	if !ok {
 		fmt.Println("No query found")
 		return []dtos.Job{}
 	}
 
-	fmt.Printf("🔍 Searching for: %s\n", query)
+	fmt.Printf("Searching for: %s\n", query)
 
 	switch functionCall.Name {
 	case "search_jsearch_jobs":

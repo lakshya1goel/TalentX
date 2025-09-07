@@ -11,6 +11,11 @@ import (
 )
 
 func SearchJobsLinkUp(query string) ([]dtos.Job, error) {
+	defaultPreference := dtos.LocationPreference{Types: []string{"remote"}}
+	return SearchJobsLinkUpWithLocation(query, defaultPreference)
+}
+
+func SearchJobsLinkUpWithLocation(query string, locationPreference dtos.LocationPreference) ([]dtos.Job, error) {
 	apiKey := os.Getenv("LINKUP_API_KEY")
 	url := os.Getenv("LINKUP_API_URL")
 
@@ -49,8 +54,8 @@ func SearchJobsLinkUp(query string) ([]dtos.Job, error) {
 	jobs := []dtos.Job{}
 	for _, r := range parsed.Results {
 		jobs = append(jobs, dtos.Job{
-			Title:       r.Title,
-			Description: r.Snippet,
+			Title:       r.Name,
+			Description: r.Content,
 			URL:         r.URL,
 			Source:      "LinkUp",
 		})

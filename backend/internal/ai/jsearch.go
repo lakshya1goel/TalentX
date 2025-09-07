@@ -5,18 +5,29 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 
 	"github.com/lakshya1goel/job-assistance/internal/dtos"
 )
 
 func SearchJobsJSearch(query string) ([]dtos.Job, error) {
+	defaultPreference := dtos.LocationPreference{Types: []string{"remote"}}
+	return SearchJobsJSearchWithLocation(query, defaultPreference)
+}
+
+func SearchJobsJSearchWithLocation(query string, locationPreference dtos.LocationPreference) ([]dtos.Job, error) {
 	key := os.Getenv("RAPIDAPI_KEY")
 	host := os.Getenv("RAPIDAPI_HOST")
 
-	url := fmt.Sprintf("https://%s/search?query=%s&num_pages=1", host, query)
+	baseURL := fmt.Sprintf("https://%s/search", host)
+	params := url.Values{}
+	params.Add("query", query)
+	params.Add("num_pages", "1")
 
-	req, _ := http.NewRequest("GET", url, nil)
+	fullURL := baseURL + "?" + params.Encode()
+
+	req, _ := http.NewRequest("GET", fullURL, nil)
 	req.Header.Add("X-RapidAPI-Key", key)
 	req.Header.Add("X-RapidAPI-Host", host)
 
@@ -33,7 +44,6 @@ func SearchJobsJSearch(query string) ([]dtos.Job, error) {
 	var parsed struct {
 		Data []dtos.JSearchJob `json:"data"`
 	}
-	fmt.Println(string(body))
 	if err := json.Unmarshal(body, &parsed); err != nil {
 		fmt.Println(err)
 		return nil, err
@@ -41,10 +51,14 @@ func SearchJobsJSearch(query string) ([]dtos.Job, error) {
 
 	jobs := []dtos.Job{}
 	for _, job := range parsed.Data {
+		location := "Remote"
+		if !job.IsRemote {
+			location = job.Location
+		}
 		jobs = append(jobs, dtos.Job{
 			Title:    job.Title,
 			Company:  job.Company,
-			Location: job.Location,
+			Location: location,
 			URL:      job.URL,
 			Source:   "JSearch",
 		})
