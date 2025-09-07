@@ -1,5 +1,11 @@
 package ai
 
+import (
+	"fmt"
+
+	"github.com/lakshya1goel/job-assistance/internal/dtos"
+)
+
 func (a *AIClient) Prompt() string {
 	prompt := `
 You are an expert career counselor and job search specialist. Analyze the provided resume and help find the most relevant job opportunities.
@@ -40,4 +46,94 @@ Create multiple search queries:
 - Determine the query that is suitable according to the resume
 `
 	return prompt
+}
+
+func (a *AIClient) PromptWithLocation(locationPreference dtos.LocationPreference) string {
+	basePrompt := a.Prompt()
+
+	if len(locationPreference.Types) == 0 {
+		return basePrompt
+	}
+
+	locationGuidance := "\n\n5. **Location Preferences**: "
+
+	if len(locationPreference.Types) == 1 {
+		switch locationPreference.Types[0] {
+		case "remote":
+			locationGuidance += "The candidate is looking for REMOTE work opportunities only.\n\t- Focus on remote-friendly companies and positions\n\t- Include \"remote\" in search queries when relevant\n\t- Prioritize companies known for remote work culture"
+		case "onsite":
+			if len(locationPreference.Locations) > 0 {
+				locationGuidance += fmt.Sprintf("The candidate is looking for ON-SITE work in %s.\n\t- Focus on companies and positions located in or near these areas\n\t- Include location-specific searches\n\t- Consider commuting distance and local job market", joinLocations(locationPreference.Locations))
+			} else {
+				locationGuidance += "The candidate is looking for ON-SITE work opportunities.\n\t- Focus on local companies and positions\n\t- Include location-specific searches when possible"
+			}
+		case "hybrid":
+			if len(locationPreference.Locations) > 0 {
+				locationGuidance += fmt.Sprintf("The candidate is open to HYBRID work arrangements in %s.\n\t- Look for both remote and on-site opportunities in these areas\n\t- Focus on companies offering flexible work arrangements\n\t- Include both remote and location-specific searches", joinLocations(locationPreference.Locations))
+			} else {
+				locationGuidance += "The candidate is open to HYBRID work arrangements.\n\t- Look for companies offering flexible work arrangements\n\t- Include both remote and location-specific searches"
+			}
+		}
+	} else {
+		locationGuidance += "The candidate is open to multiple work arrangements:\n"
+
+		hasRemote := contains(locationPreference.Types, "remote")
+		hasOnsite := contains(locationPreference.Types, "onsite")
+		hasHybrid := contains(locationPreference.Types, "hybrid")
+
+		if hasRemote {
+			locationGuidance += "\t- REMOTE: Include remote-friendly positions and companies\n"
+		}
+		if hasOnsite {
+			if len(locationPreference.Locations) > 0 {
+				locationGuidance += fmt.Sprintf("\t- ON-SITE: Include positions in %s\n", joinLocations(locationPreference.Locations))
+			} else {
+				locationGuidance += "\t- ON-SITE: Include local on-site positions\n"
+			}
+		}
+		if hasHybrid {
+			if len(locationPreference.Locations) > 0 {
+				locationGuidance += fmt.Sprintf("\t- HYBRID: Include flexible arrangements in %s\n", joinLocations(locationPreference.Locations))
+			} else {
+				locationGuidance += "\t- HYBRID: Include flexible work arrangements\n"
+			}
+		}
+
+		locationGuidance += "\t- Cast a wide net to capture all preferred work arrangements\n\t- Use varied search terms to find opportunities matching any of these preferences"
+	}
+
+	return basePrompt + locationGuidance
+}
+
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
+}
+
+func joinLocations(locations []string) string {
+	if len(locations) == 0 {
+		return ""
+	}
+	if len(locations) == 1 {
+		return locations[0]
+	}
+	if len(locations) == 2 {
+		return locations[0] + " and " + locations[1]
+	}
+
+	result := ""
+	for i, loc := range locations {
+		if i == len(locations)-1 {
+			result += "and " + loc
+		} else if i > 0 {
+			result += ", " + loc
+		} else {
+			result += loc
+		}
+	}
+	return result
 }

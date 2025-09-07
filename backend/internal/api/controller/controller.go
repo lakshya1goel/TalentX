@@ -61,7 +61,59 @@ func (c *JobController) FetchJobs(ctx *gin.Context) {
 		return
 	}
 
-	jobs, err := c.service.FetchJobs(ctx, pdfBytes)
+	locationTypes := ctx.PostFormArray("location_types")
+	locations := ctx.PostFormArray("locations")
+
+	if len(locationTypes) == 0 {
+		if singleType := ctx.PostForm("location_type"); singleType != "" {
+			locationTypes = []string{singleType}
+		}
+	}
+	if len(locations) == 0 {
+		if singleLocation := ctx.PostForm("location"); singleLocation != "" {
+			locations = []string{singleLocation}
+		}
+	}
+
+	locationPreference := dtos.LocationPreference{
+		Types:     locationTypes,
+		Locations: locations,
+	}
+
+	if len(locationPreference.Types) == 0 {
+		locationPreference.Types = []string{"remote"}
+	}
+
+	validTypes := map[string]bool{"remote": true, "onsite": true, "hybrid": true}
+	for _, locType := range locationPreference.Types {
+		if !validTypes[locType] {
+			ctx.JSON(http.StatusBadRequest, dtos.ErrorResponse{
+				Error:     "Invalid location type. Must be 'remote', 'onsite', or 'hybrid'",
+				Success:   false,
+				Timestamp: time.Now(),
+			})
+			return
+		}
+	}
+
+	needsLocation := false
+	for _, locType := range locationPreference.Types {
+		if locType == "onsite" || locType == "hybrid" {
+			needsLocation = true
+			break
+		}
+	}
+
+	if needsLocation && len(locationPreference.Locations) == 0 {
+		ctx.JSON(http.StatusBadRequest, dtos.ErrorResponse{
+			Error:     "At least one location is required for onsite and hybrid positions",
+			Success:   false,
+			Timestamp: time.Now(),
+		})
+		return
+	}
+
+	jobs, err := c.service.FetchJobs(ctx, pdfBytes, locationPreference)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, dtos.ErrorResponse{
 			Error:     err.Error(),

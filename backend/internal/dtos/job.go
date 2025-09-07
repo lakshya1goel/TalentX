@@ -2,6 +2,11 @@ package dtos
 
 import "time"
 
+type LocationPreference struct {
+	Types     []string `json:"types" binding:"required"`
+	Locations []string `json:"locations,omitempty"`
+}
+
 type JSearchJob struct {
 	Title       string `json:"job_title"`
 	Company     string `json:"employer_name"`

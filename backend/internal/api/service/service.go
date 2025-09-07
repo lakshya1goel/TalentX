@@ -10,7 +10,7 @@ import (
 )
 
 type JobService interface {
-	FetchJobs(ctx context.Context, pdfBytes []byte) ([]dtos.Job, error)
+	FetchJobs(ctx context.Context, pdfBytes []byte, locationPreference dtos.LocationPreference) ([]dtos.Job, error)
 }
 
 type jobService struct {
@@ -23,8 +23,8 @@ func NewJobService() JobService {
 	}
 }
 
-func (s *jobService) FetchJobs(ctx context.Context, pdfBytes []byte) ([]dtos.Job, error) {
-	jobs, err := s.aiClient.GetJobsFromResume(ctx, pdfBytes)
+func (s *jobService) FetchJobs(ctx context.Context, pdfBytes []byte, locationPreference dtos.LocationPreference) ([]dtos.Job, error) {
+	jobs, err := s.aiClient.GetJobsFromResume(ctx, pdfBytes, locationPreference)
 	if err != nil {
 		return []dtos.Job{}, fmt.Errorf("failed to analyze resume: %w", err)
 	}
