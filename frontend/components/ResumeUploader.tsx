@@ -111,12 +111,12 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-6">
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Location Preferences</h3>
+      <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 shadow-lg">
+        <h3 className="text-lg font-medium text-white mb-4">Location Preferences</h3>
         
         <div className="space-y-4">
           <div>
-            <label className="text-sm font-medium text-gray-700 block mb-2">
+            <label className="text-sm font-medium text-slate-300 block mb-2">
               Work Arrangement (Select all that apply)
             </label>
             <div className="space-y-2">
@@ -126,9 +126,9 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
                     type="checkbox"
                     checked={locationPreference.types.includes(type)}
                     onChange={(e) => handleLocationTypeChange(type, e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-600 rounded bg-slate-700"
                   />
-                  <span className="ml-2 text-sm text-gray-700 capitalize">
+                  <span className="ml-2 text-sm text-slate-300 capitalize">
                     {type}
                   </span>
                 </label>
@@ -138,7 +138,7 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
 
           {needsLocation && (
             <div>
-              <label className="text-sm font-medium text-gray-700 block mb-2">
+              <label className="text-sm font-medium text-slate-300 block mb-2">
                 Locations (Required for onsite and hybrid positions)
               </label>
               <div className="flex space-x-2 mb-2">
@@ -148,13 +148,13 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
                   onChange={(e) => setLocationInput(e.target.value)}
                   onKeyPress={handleLocationInputKeyPress}
                   placeholder="e.g., San Francisco, CA"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black caret-black"
+                  className="flex-1 px-3 py-2 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white caret-white bg-slate-700 placeholder-slate-400"
                 />
                 <button
                   type="button"
                   onClick={addLocation}
                   disabled={!locationInput.trim()}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                 >
                   Add
                 </button>
@@ -165,13 +165,13 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
                   {locationPreference.locations.map((location, index) => (
                     <span
                       key={index}
-                      className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800"
+                      className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-900/50 text-blue-300 border border-blue-700"
                     >
                       {location}
                       <button
                         type="button"
                         onClick={() => removeLocation(location)}
-                        className="ml-2 text-blue-600 hover:text-blue-800"
+                        className="ml-2 text-blue-400 hover:text-blue-200 transition-colors duration-200"
                       >
                         ×
                       </button>
@@ -185,17 +185,17 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
       </div>
 
       <div
-        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 ${
           isDragOver
-            ? 'border-blue-400 bg-blue-50'
-            : 'border-gray-300 hover:border-gray-400'
+            ? 'border-blue-400 bg-blue-900/20'
+            : 'border-slate-600 hover:border-slate-500 bg-slate-800'
         }`}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
       >
         <div className="space-y-4">
-          <div className="mx-auto w-12 h-12 text-gray-400">
+          <div className="mx-auto w-12 h-12 text-slate-400">
             <svg
               className="w-full h-full"
               fill="none"
@@ -212,13 +212,13 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
             </svg>
           </div>
           <div>
-            <p className="text-lg font-medium text-gray-900">
+            <p className="text-lg font-medium text-white">
               Upload your resume
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-slate-400">
               Drag and drop your PDF resume here, or click to browse
             </p>
-            <p className="text-xs text-gray-400 mt-2">
+            <p className="text-xs text-slate-500 mt-2">
               Maximum file size: 10MB | Supported format: PDF
             </p>
           </div>
@@ -232,7 +232,7 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
             />
             <label
               htmlFor="resume-upload"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-slate-800 cursor-pointer transition-colors duration-200"
             >
               Choose File
             </label>
