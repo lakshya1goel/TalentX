@@ -49,8 +49,8 @@ func SearchJobsLinkUp(query string) ([]dtos.Job, error) {
 	jobs := []dtos.Job{}
 	for _, r := range parsed.Results {
 		jobs = append(jobs, dtos.Job{
-			Title:       r.Title,
-			Description: r.Snippet,
+			Title:       r.Name,
+			Description: r.Content,
 			URL:         r.URL,
 			Source:      "LinkUp",
 		})

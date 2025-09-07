@@ -5,16 +5,17 @@ import "time"
 type JSearchJob struct {
 	Title       string `json:"job_title"`
 	Company     string `json:"employer_name"`
+	IsRemote    bool   `json:"job_is_remote"`
 	Location    string `json:"job_city"`
 	Description string `json:"job_description"`
 	URL         string `json:"job_apply_link"`
 }
 
 type LinkupJob struct {
-	Title   string `json:"title"`
+	Content string `json:"content"`
+	Name    string `json:"name"`
+	Type    string `json:"type"`
 	URL     string `json:"url"`
-	Snippet string `json:"snippet"`
-	Source  string `json:"source"`
 }
 
 type Job struct {

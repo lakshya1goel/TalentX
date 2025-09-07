@@ -33,7 +33,6 @@ func SearchJobsJSearch(query string) ([]dtos.Job, error) {
 	var parsed struct {
 		Data []dtos.JSearchJob `json:"data"`
 	}
-	fmt.Println(string(body))
 	if err := json.Unmarshal(body, &parsed); err != nil {
 		fmt.Println(err)
 		return nil, err
@@ -41,10 +40,14 @@ func SearchJobsJSearch(query string) ([]dtos.Job, error) {
 
 	jobs := []dtos.Job{}
 	for _, job := range parsed.Data {
+		location := "Remote"
+		if !job.IsRemote {
+			location = job.Location
+		}
 		jobs = append(jobs, dtos.Job{
 			Title:    job.Title,
 			Company:  job.Company,
-			Location: job.Location,
+			Location: location,
 			URL:      job.URL,
 			Source:   "JSearch",
 		})
