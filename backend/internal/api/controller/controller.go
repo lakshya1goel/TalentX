@@ -3,6 +3,7 @@ package controller
 import (
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -113,7 +114,24 @@ func (c *JobController) FetchJobs(ctx *gin.Context) {
 		return
 	}
 
-	jobs, err := c.service.FetchJobs(ctx, pdfBytes, locationPreference)
+	pagination := dtos.PaginationRequest{
+		Page:     1,
+		PageSize: 20,
+	}
+
+	if pageStr := ctx.PostForm("page"); pageStr != "" {
+		if page, err := strconv.Atoi(pageStr); err == nil && page > 0 {
+			pagination.Page = page
+		}
+	}
+
+	if pageSizeStr := ctx.PostForm("page_size"); pageSizeStr != "" {
+		if pageSize, err := strconv.Atoi(pageSizeStr); err == nil && pageSize > 0 && pageSize <= 100 {
+			pagination.PageSize = pageSize
+		}
+	}
+
+	jobs, err := c.service.FetchJobs(ctx, pdfBytes, locationPreference, pagination)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, dtos.ErrorResponse{
 			Error:     err.Error(),
