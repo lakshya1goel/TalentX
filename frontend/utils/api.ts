@@ -14,12 +14,10 @@ export async function uploadResumeAndGetJobs(
   const formData = new FormData();
   formData.append('resume', file);
   
-  // Append multiple location types
   locationPreference.types.forEach(type => {
     formData.append('location_types', type);
   });
   
-  // Append multiple locations if provided
   if (locationPreference.locations && locationPreference.locations.length > 0) {
     locationPreference.locations.forEach(location => {
       formData.append('locations', location);
@@ -37,4 +35,4 @@ export async function uploadResumeAndGetJobs(
   }
 
   return response.json();
-} 
+}

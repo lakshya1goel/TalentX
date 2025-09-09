@@ -37,3 +37,9 @@ type ErrorResponse struct {
 	Success   bool      `json:"success"`
 	Timestamp time.Time `json:"timestamp"`
 }
+
+type JobSearchResult struct {
+	Jobs   []Job
+	Error  error
+	Source string
+}

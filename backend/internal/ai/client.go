@@ -3,6 +3,7 @@ package ai
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/lakshya1goel/job-assistance/internal/dtos"
 	"google.golang.org/genai"
@@ -55,56 +56,124 @@ func (a *AIClient) GetJobsFromResume(ctx context.Context, pdfBytes []byte, locat
 		return nil, fmt.Errorf("failed to generate content: %w", err)
 	}
 
-	var allJobs []dtos.Job
-
 	fmt.Println("Processing AI response...")
-
+	var functionCalls []*genai.FunctionCall
 	for _, candidate := range result.Candidates {
 		for _, part := range candidate.Content.Parts {
-
 			if part.FunctionCall != nil {
-				functionCall := part.FunctionCall
-				fmt.Printf("AI wants to call: %s\n", functionCall.Name)
-
-				jobs := a.callJobAPIWithLocation(functionCall)
-				allJobs = append(allJobs, jobs...)
+				functionCalls = append(functionCalls, part.FunctionCall)
+				fmt.Printf("AI wants to call: %s\n", part.FunctionCall.Name)
 			}
 		}
 	}
 
-	return allJobs, nil
-}
-
-func (a *AIClient) callJobAPIWithLocation(functionCall *genai.FunctionCall) []dtos.Job {
-	query, ok := functionCall.Args["query"].(string)
-	if !ok {
-		fmt.Println("No query found")
-		return []dtos.Job{}
+	if len(functionCalls) == 0 {
+		fmt.Println("No function calls found in AI response")
+		return []dtos.Job{}, nil
 	}
 
-	fmt.Printf("Searching for: %s\n", query)
-
-	switch functionCall.Name {
-	case "search_jsearch_jobs":
-		jobs, err := SearchJobsJSearch(query)
-		if err != nil {
-			fmt.Printf("JSearch error: %v\n", err)
-			return []dtos.Job{}
-		}
-		fmt.Printf("JSearch found %d jobs\n", len(jobs))
-		return jobs
-
-	case "search_linkup_jobs":
-		jobs, err := SearchJobsLinkUp(query)
-		if err != nil {
-			fmt.Printf("LinkUp error: %v\n", err)
-			return []dtos.Job{}
-		}
-		fmt.Printf("LinkUp found %d jobs\n", len(jobs))
-		return jobs
-
-	default:
-		fmt.Printf("Unknown function: %s\n", functionCall.Name)
-		return []dtos.Job{}
-	}
+	return a.executeParallelJobSearch(functionCalls), nil
 }
+
+func (a *AIClient) executeParallelJobSearch(functionCalls []*genai.FunctionCall) []dtos.Job {
+	var wg sync.WaitGroup
+	results := make(chan dtos.JobSearchResult, len(functionCalls))
+
+	for _, functionCall := range functionCalls {
+		wg.Add(1)
+		go func(fc *genai.FunctionCall) {
+			defer wg.Done()
+
+			query, ok := fc.Args["query"].(string)
+			if !ok {
+				fmt.Printf("No query found for function %s\n", fc.Name)
+				results <- dtos.JobSearchResult{
+					Jobs:   []dtos.Job{},
+					Error:  fmt.Errorf("no query found for function %s", fc.Name),
+					Source: fc.Name,
+				}
+				return
+			}
+
+			fmt.Printf("Searching %s for: %s\n", fc.Name, query)
+
+			switch fc.Name {
+			case "search_jsearch_jobs":
+				jobs, err := SearchJobsJSearch(query)
+				results <- dtos.JobSearchResult{
+					Jobs:   jobs,
+					Error:  err,
+					Source: "JSearch",
+				}
+
+			case "search_linkup_jobs":
+				jobs, err := SearchJobsLinkUp(query)
+				results <- dtos.JobSearchResult{
+					Jobs:   jobs,
+					Error:  err,
+					Source: "LinkUp",
+				}
+
+			default:
+				fmt.Printf("Unknown function: %s\n", fc.Name)
+				results <- dtos.JobSearchResult{
+					Jobs:   []dtos.Job{},
+					Error:  fmt.Errorf("unknown function: %s", fc.Name),
+					Source: fc.Name,
+				}
+			}
+		}(functionCall)
+	}
+
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	var allJobs []dtos.Job
+	for result := range results {
+		if result.Error != nil {
+			fmt.Printf("%s error: %v\n", result.Source, result.Error)
+		} else {
+			fmt.Printf("%s found %d jobs\n", result.Source, len(result.Jobs))
+			allJobs = append(allJobs, result.Jobs...)
+		}
+	}
+
+	fmt.Printf("Total jobs found across all sources: %d\n", len(allJobs))
+	return allJobs
+}
+
+// func (a *AIClient) callJobAPIWithLocation(functionCall *genai.FunctionCall) []dtos.Job {
+// 	query, ok := functionCall.Args["query"].(string)
+// 	if !ok {
+// 		fmt.Println("No query found")
+// 		return []dtos.Job{}
+// 	}
+
+// 	fmt.Printf("Searching for: %s\n", query)
+
+// 	switch functionCall.Name {
+// 	case "search_jsearch_jobs":
+// 		jobs, err := SearchJobsJSearch(query)
+// 		if err != nil {
+// 			fmt.Printf("JSearch error: %v\n", err)
+// 			return []dtos.Job{}
+// 		}
+// 		fmt.Printf("JSearch found %d jobs\n", len(jobs))
+// 		return jobs
+
+// 	case "search_linkup_jobs":
+// 		jobs, err := SearchJobsLinkUp(query)
+// 		if err != nil {
+// 			fmt.Printf("LinkUp error: %v\n", err)
+// 			return []dtos.Job{}
+// 		}
+// 		fmt.Printf("LinkUp found %d jobs\n", len(jobs))
+// 		return jobs
+
+// 	default:
+// 		fmt.Printf("Unknown function: %s\n", functionCall.Name)
+// 		return []dtos.Job{}
+// 	}
+// }
