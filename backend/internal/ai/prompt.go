@@ -1,6 +1,7 @@
 package ai
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/lakshya1goel/job-assistance/internal/dtos"
@@ -103,6 +104,59 @@ func (a *AIClient) PromptWithLocation(locationPreference dtos.LocationPreference
 	}
 
 	return basePrompt + locationGuidance
+}
+
+func (r *RerankingClient) RerankingPrompt(jobs []dtos.Job) string {
+	jobsJSON, _ := json.MarshalIndent(jobs, "", "  ")
+
+	prompt := fmt.Sprintf(`
+You are an expert career counselor and resume analyzer. Your task is to analyze the provided resume and rank the given job opportunities based on their relevance to the candidate's profile.
+
+**Resume Analysis Instructions:**
+1. Extract the candidate's:
+	- Technical skills and technologies
+	- Years of experience and seniority level
+	- Previous job titles and roles
+	- Industry experience
+	- Education and certifications
+	- Career progression and growth trajectory
+
+**Job Ranking Instructions:**
+2. For each job, evaluate:
+	- **Skill Match**: How well do the required skills align with the candidate's skills?
+	- **Experience Level Match**: Is the role appropriate for the candidate's experience level?
+	- **Industry Relevance**: Does the role align with the candidate's industry background?
+	- **Career Growth Potential**: Does this role offer appropriate career advancement?
+	- **Role Transition Feasibility**: How realistic is it for the candidate to transition to this role?
+
+**Scoring Guidelines:**
+- Score each job from 0.0 to 10.0 (10.0 being perfect match)
+- Consider both current qualifications and potential for growth
+- Factor in transferable skills and learning potential
+- Be realistic about experience requirements vs. candidate's background
+
+**Output Format:**
+Return a JSON array of ranked jobs in descending order of relevance score. Each job should include:
+`+"```json"+`
+[
+	{
+		"job_index": 0,
+		"relevance_score": 8.5,
+		"match_reason": "Strong alignment with candidate's Python and ML experience. Role matches seniority level.",
+		"skills_matched": ["Python", "Machine Learning", "TensorFlow"],
+		"experience_match": "Perfect match for mid-level candidate",
+		"concerns": "May require some additional cloud experience"
+	}
+]
+`+"```"+`
+
+**Jobs to Rank:**
+%s
+
+Please analyze the resume thoroughly and provide a detailed ranking of these %d job opportunities.
+`, string(jobsJSON), len(jobs))
+
+	return prompt
 }
 
 func contains(slice []string, item string) bool {
