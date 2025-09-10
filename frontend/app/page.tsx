@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Header from '../components/Header';
+// import Header from '../components/Header';
 import ResumeUploader from '../components/ResumeUploader';
 import JobsList from '../components/JobsList';
 import LoadingSpinner from '../components/LoadingSpinner';

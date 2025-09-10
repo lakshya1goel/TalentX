@@ -25,7 +25,7 @@ const Pagination: React.FC<PaginationProps> = ({
         const maxVisible = 5;
         
         let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
-        let end = Math.min(totalPages, start + maxVisible - 1);
+        const end = Math.min(totalPages, start + maxVisible - 1);
         
         if (end - start + 1 < maxVisible) {
             start = Math.max(1, end - maxVisible + 1);
@@ -53,14 +53,14 @@ const Pagination: React.FC<PaginationProps> = ({
         <div className="flex items-center gap-2">
             <span className="text-sm text-slate-300">Show:</span>
             <select
-            value={pageSize}
-            onChange={(e) => onPageSizeChange(Number(e.target.value))}
-            className="bg-slate-700 border border-slate-600 rounded px-2 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-            <option value={6}>6</option>
-            <option value={12}>12</option>
-            <option value={18}>18</option>
-            <option value={30}>30</option>
+                value={pageSize}
+                onChange={(e) => onPageSizeChange(Number(e.target.value))}
+                className="bg-slate-700 border border-slate-600 rounded px-2 py-1 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={15}>15</option>
+                <option value={20}>20</option>
             </select>
             <span className="text-sm text-slate-300">per page</span>
         </div>
