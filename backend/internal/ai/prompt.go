@@ -130,18 +130,18 @@ You are an expert career counselor and resume analyzer. Your task is to analyze 
 	- **Role Transition Feasibility**: How realistic is it for the candidate to transition to this role?
 
 **Scoring Guidelines:**
-- Score each job from 0.0 to 100.0 (100.0 being perfect match percentage)
+- Score each job from 0.0 to 1.0 (1.0 being perfect match)
 - Consider both current qualifications and potential for growth
 - Factor in transferable skills and learning potential
 - Be realistic about experience requirements vs. candidate's background
 
 **Output Format:**
-Return a JSON array of ranked jobs in descending order of match percentage. Each job should include:
+Return a JSON array of ranked jobs in descending order of match score. Each job should include:
 `+"```json"+`
 [
 	{
 		"job_index": 0,
-		"percent_match": 85.0,
+		"match_score": 0.85,
 		"match_reason": "Strong alignment with candidate's Python and ML experience. Role matches seniority level.",
 		"skills_matched": ["Python", "Machine Learning", "TensorFlow"],
 		"experience_match": "Perfect match for mid-level candidate",

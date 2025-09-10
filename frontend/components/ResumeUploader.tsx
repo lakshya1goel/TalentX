@@ -112,24 +112,39 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-6">
-      <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 shadow-lg">
-        <h3 className="text-lg font-medium text-white mb-4">Location Preferences</h3>
+      {/* Location Preferences */}
+      <div className="p-6 rounded-xl backdrop-blur-sm" style={{
+        background: 'linear-gradient(135deg, rgba(10,10,10,0.8), rgba(26,26,26,0.8))',
+        border: '1px solid rgba(29,205,159,.2)'
+      }}>
+        <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+          <svg className="w-5 h-5 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          Location Preferences
+        </h3>
         
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div>
-            <label className="text-sm font-medium text-slate-300 block mb-2">
-              Work Arrangement (Select all that apply)
+            <label className="text-sm font-medium text-gray-300 block mb-3">
+              Work Arrangement
             </label>
-            <div className="space-y-2">
+            <div className="grid grid-cols-3 gap-3">
               {(['remote', 'onsite', 'hybrid'] as const).map((type) => (
-                <label key={type} className="flex items-center">
+                <label key={type} className="flex items-center justify-center p-3 rounded-lg cursor-pointer transition-all duration-200 hover:scale-105" style={{
+                  background: locationPreference.types.includes(type) 
+                    ? 'linear-gradient(135deg, #16a085, #138f7a)'
+                    : 'rgba(29,205,159,.1)',
+                  border: `1px solid ${locationPreference.types.includes(type) ? 'rgba(29,205,159,.4)' : 'rgba(29,205,159,.2)'}`
+                }}>
                   <input
                     type="checkbox"
                     checked={locationPreference.types.includes(type)}
                     onChange={(e) => handleLocationTypeChange(type, e.target.checked)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-600 rounded bg-slate-700"
+                    className="sr-only"
                   />
-                  <span className="ml-2 text-sm text-slate-300 capitalize">
+                  <span className="text-sm font-medium text-white capitalize">
                     {type}
                   </span>
                 </label>
@@ -139,23 +154,30 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
 
           {needsLocation && (
             <div>
-              <label className="text-sm font-medium text-slate-300 block mb-2">
-                Locations (Required for onsite and hybrid positions)
+              <label className="text-sm font-medium text-gray-300 block mb-3">
+                Specific Locations
               </label>
-              <div className="flex space-x-2 mb-2">
+              <div className="flex gap-2 mb-3">
                 <input
                   type="text"
                   value={locationInput}
                   onChange={(e) => setLocationInput(e.target.value)}
                   onKeyPress={handleLocationInputKeyPress}
                   placeholder="e.g., San Francisco, CA"
-                  className="flex-1 px-3 py-2 border border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white caret-white bg-slate-700 placeholder-slate-400"
+                  className="flex-1 px-4 py-2 rounded-lg text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  style={{
+                    background: 'rgba(10,10,10,0.6)',
+                    border: '1px solid rgba(29,205,159,.2)'
+                  }}
                 />
                 <button
                   type="button"
                   onClick={addLocation}
                   disabled={!locationInput.trim()}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                  className="px-4 py-2 text-white rounded-lg font-medium transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    background: 'linear-gradient(135deg, #16a085, #138f7a)'
+                  }}
                 >
                   Add
                 </button>
@@ -166,13 +188,17 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
                   {locationPreference.locations.map((location, index) => (
                     <span
                       key={index}
-                      className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-900/50 text-blue-300 border border-blue-700"
+                      className="inline-flex items-center px-3 py-1 rounded-full text-sm text-white"
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(22,160,133,0.3), rgba(19,143,122,0.3))',
+                        border: '1px solid rgba(29,205,159,.3)'
+                      }}
                     >
                       {location}
                       <button
                         type="button"
                         onClick={() => removeLocation(location)}
-                        className="ml-2 text-blue-400 hover:text-blue-200 transition-colors duration-200"
+                        className="ml-2 text-green-300 hover:text-white transition-colors duration-200"
                       >
                         ×
                       </button>
@@ -185,20 +211,27 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
         </div>
       </div>
 
+      {/* File Upload Area */}
       <div
-        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors duration-200 ${
-          isDragOver
-            ? 'border-blue-400 bg-blue-900/20'
-            : 'border-slate-600 hover:border-slate-500 bg-slate-800'
+        className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 cursor-pointer ${
+          isDragOver ? 'scale-105' : 'hover:scale-[1.02]'
         }`}
+        style={{
+          background: isDragOver 
+            ? 'linear-gradient(135deg, rgba(22,160,133,0.1), rgba(19,143,122,0.1))'
+            : 'linear-gradient(135deg, rgba(10,10,10,0.8), rgba(26,26,26,0.8))',
+          borderColor: isDragOver ? '#16a085' : 'rgba(29,205,159,.3)'
+        }}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
       >
         <div className="space-y-4">
-          <div className="mx-auto w-12 h-12 text-slate-400">
+          <div className="mx-auto w-16 h-16 flex items-center justify-center rounded-full" style={{
+            background: 'linear-gradient(135deg, rgba(22,160,133,0.2), rgba(19,143,122,0.2))'
+          }}>
             <svg
-              className="w-full h-full"
+              className="w-8 h-8 text-green-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -208,18 +241,18 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
               />
             </svg>
           </div>
           <div>
-            <p className="text-lg font-medium text-white">
+            <p className="text-xl font-semibold text-white mb-2">
               Upload your resume
             </p>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-gray-400 mb-4">
               Drag and drop your PDF resume here, or click to browse
             </p>
-            <p className="text-xs text-slate-500 mt-2">
+            <p className="text-xs text-gray-500">
               Maximum file size: 10MB | Supported format: PDF
             </p>
           </div>
@@ -233,8 +266,15 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
             />
             <label
               htmlFor="resume-upload"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-slate-800 cursor-pointer transition-colors duration-200"
+              className="inline-flex items-center px-6 py-3 text-sm font-semibold rounded-lg text-white cursor-pointer transition-all duration-200 hover:scale-105"
+              style={{
+                background: 'linear-gradient(135deg, #16a085, #138f7a)',
+                boxShadow: '0 15px 35px rgba(29,205,159,.4), 0 0 0 1px rgba(29,205,159,.2)'
+              }}
             >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
               Choose File
             </label>
           </div>
