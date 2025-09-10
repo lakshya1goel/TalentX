@@ -9,6 +9,90 @@ interface JobsListProps {
   jobs: Job[];
 }
 
+// Circular Progress Ring Component
+const CircularProgress: React.FC<{ percentage: number; size?: number }> = ({ 
+  percentage, 
+  size = 60 
+}) => {
+  const radius = (size - 8) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const strokeDasharray = circumference;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+  const getColor = (percent: number) => {
+    if (percent >= 80) return '#10b981'; // green-500
+    if (percent >= 60) return '#f59e0b'; // amber-500
+    return '#ef4444'; // red-500
+  };
+
+  const getGradientId = (percent: number) => {
+    if (percent >= 80) return 'greenGradient';
+    if (percent >= 60) return 'amberGradient';
+    return 'redGradient';
+  };
+
+  return (
+    <div className="relative inline-flex items-center justify-center">
+      <svg
+        width={size}
+        height={size}
+        className="transform -rotate-90"
+      >
+        {/* Gradient definitions */}
+        <defs>
+          <linearGradient id="greenGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#34d399" stopOpacity="1" />
+            <stop offset="50%" stopColor="#10b981" stopOpacity="1" />
+            <stop offset="100%" stopColor="#059669" stopOpacity="1" />
+          </linearGradient>
+          <linearGradient id="amberGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#fbbf24" stopOpacity="1" />
+            <stop offset="50%" stopColor="#f59e0b" stopOpacity="1" />
+            <stop offset="100%" stopColor="#d97706" stopOpacity="1" />
+          </linearGradient>
+          <linearGradient id="redGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#f87171" stopOpacity="1" />
+            <stop offset="50%" stopColor="#ef4444" stopOpacity="1" />
+            <stop offset="100%" stopColor="#dc2626" stopOpacity="1" />
+          </linearGradient>
+        </defs>
+        
+        {/* Background circle */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="rgba(29,205,159,0.1)"
+          strokeWidth="4"
+          fill="none"
+        />
+        {/* Progress circle */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={`url(#${getGradientId(percentage)})`}
+          strokeWidth="4"
+          fill="none"
+          strokeLinecap="round"
+          strokeDasharray={strokeDasharray}
+          strokeDashoffset={strokeDashoffset}
+          className="transition-all duration-1000 ease-out"
+          style={{
+            strokeLinecap: 'round'
+          }}
+        />
+      </svg>
+      {/* Percentage text */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-xs font-bold text-white">
+          {Math.round(percentage)}%
+        </span>
+      </div>
+    </div>
+  );
+};
+
 export default function JobsList({ jobs }: JobsListProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -85,12 +169,6 @@ export default function JobsList({ jobs }: JobsListProps) {
 const JobCard: React.FC<{ rankedJob: RankedJob; rank: number }> = ({ rankedJob, rank }) => {
   const { job, percent_match, match_reason, skills_matched, experience_match } = rankedJob;
 
-  const getPercentageColor = (percentage: number) => {
-    if (percentage >= 80) return 'text-green-400 bg-green-900/30 border-green-400/30';
-    if (percentage >= 60) return 'text-yellow-400 bg-yellow-900/30 border-yellow-400/30';
-    return 'text-red-400 bg-red-900/30 border-red-400/30';
-  };
-
   return (
     <div 
       className="rounded-xl p-6 transition-all duration-200 hover:scale-[1.01] backdrop-blur-sm"
@@ -128,8 +206,10 @@ const JobCard: React.FC<{ rankedJob: RankedJob; rank: number }> = ({ rankedJob, 
           </div>
         </div>
         
-        <div className={`px-4 py-2 rounded-full text-sm font-semibold border ${getPercentageColor(percent_match)}`}>
-          {percent_match.toFixed(0)}% Match
+        {/* Circular Progress Ring for Percentage */}
+        <div className="flex flex-col items-center gap-2">
+          <CircularProgress percentage={percent_match} size={80} />
+          <span className="text-xs text-gray-400 font-medium">Match</span>
         </div>
       </div>
 
