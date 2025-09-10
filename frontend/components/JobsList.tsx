@@ -1,12 +1,34 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import { Job } from '../types/job';
+import { paginateArray } from '../utils/api';
+import Pagination from './Pagination';
 
 interface JobsListProps {
   jobs: Job[];
 }
 
 export default function JobsList({ jobs }: JobsListProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(6); // 6 jobs per page to fit nicely in the 3-column grid
+
+  // Client-side pagination
+  const paginatedData = useMemo(() => {
+    return paginateArray(jobs, { page: currentPage, pageSize });
+  }, [jobs, currentPage, pageSize]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // Scroll to top when page changes
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1); // Reset to first page when changing page size
+  };
+
   if (jobs.length === 0) {
     return null;
   }
@@ -23,7 +45,7 @@ export default function JobsList({ jobs }: JobsListProps) {
       </div>
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {jobs.map((job, index) => (
+        {paginatedData.data.map((job, index) => (
           <div
             key={index}
             className="bg-slate-800 rounded-lg shadow-lg border border-slate-700 hover:shadow-xl hover:border-slate-600 transition-all duration-200 flex flex-col"
@@ -106,6 +128,16 @@ export default function JobsList({ jobs }: JobsListProps) {
           </div>
         ))}
       </div>
+
+      {/* Pagination */}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={paginatedData.pagination.totalPages}
+        onPageChange={handlePageChange}
+        pageSize={pageSize}
+        onPageSizeChange={handlePageSizeChange}
+        totalItems={jobs.length}
+      />
     </div>
   );
 } 

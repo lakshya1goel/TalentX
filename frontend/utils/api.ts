@@ -7,10 +7,24 @@ export interface LocationPreference {
   locations?: string[];
 }
 
+export interface RankedJob {
+  job: Job;
+  percent_match: number;
+  match_reason: string;
+  skills_matched: string[];
+  experience_match: string;
+}
+
+export interface JobSearchResponse {
+  jobs: RankedJob[];
+  total: number;
+  success: boolean;
+}
+
 export async function uploadResumeAndGetJobs(
   file: File, 
   locationPreference: LocationPreference
-): Promise<Job[]> {
+): Promise<RankedJob[]> {
   const formData = new FormData();
   formData.append('resume', file);
   
@@ -34,5 +48,45 @@ export async function uploadResumeAndGetJobs(
     throw new Error(errorData.error || 'Failed to fetch jobs');
   }
 
-  return response.json();
+  const result: JobSearchResponse = await response.json();
+  return result.jobs;
+}
+
+export interface PaginationParams {
+  page: number;
+  pageSize: number;
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}
+
+export function paginateArray<T>(
+  array: T[], 
+  { page, pageSize }: PaginationParams
+): PaginatedResult<T> {
+  const total = array.length;
+  const totalPages = Math.ceil(total / pageSize);
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, total);
+  
+  return {
+    data: array.slice(startIndex, endIndex),
+    pagination: {
+      page,
+      pageSize,
+      total,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+    },
+  };
 }

@@ -38,7 +38,8 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
     try {
       onLoading(true);
       onError('');
-      const jobs = await uploadResumeAndGetJobs(file, locationPreference);
+      const rankedJobs = await uploadResumeAndGetJobs(file, locationPreference);
+      const jobs: Job[] = rankedJobs.map(rankedJob => rankedJob.job);
       onJobsReceived(jobs);
     } catch (error) {
       onError(error instanceof Error ? error.message : 'An error occurred while processing your resume.');
