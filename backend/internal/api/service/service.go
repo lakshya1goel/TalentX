@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"math"
 
 	"github.com/lakshya1goel/job-assistance/config"
 	"github.com/lakshya1goel/job-assistance/internal/ai"
@@ -11,77 +10,41 @@ import (
 )
 
 type JobService interface {
-	FetchJobs(ctx context.Context, pdfBytes []byte, locationPreference dtos.LocationPreference, pagination dtos.PaginationRequest) (dtos.PaginatedJobResponse, error)
+	FetchAndRankAllJobs(ctx context.Context, pdfBytes []byte, locationPreference dtos.LocationPreference) ([]dtos.RankedJob, error)
 }
 
 type jobService struct {
-	aiClient      ai.AIClient
-	rankingClient ai.RerankingClient
+	aiClient      *ai.AIClient
+	rankingClient *ai.RerankingClient
 }
 
 func NewJobService() JobService {
+	ctx := context.Background()
+	apiKey := config.GetAPIKey()
+
 	return &jobService{
-		aiClient:      *ai.NewAIClient(context.Background(), config.GetAPIKey()),
-		rankingClient: *ai.NewRerankingClient(context.Background(), config.GetAPIKey()),
+		aiClient:      ai.NewAIClient(ctx, apiKey),
+		rankingClient: ai.NewRerankingClient(ctx, apiKey),
 	}
 }
 
-func (s *jobService) FetchJobs(ctx context.Context, pdfBytes []byte, locationPreference dtos.LocationPreference, pagination dtos.PaginationRequest) (dtos.PaginatedJobResponse, error) {
+func (s *jobService) FetchAndRankAllJobs(ctx context.Context, pdfBytes []byte, locationPreference dtos.LocationPreference) ([]dtos.RankedJob, error) {
 	fmt.Println("Fetching jobs from various sources...")
 	jobs, err := s.aiClient.GetJobsFromResume(ctx, pdfBytes, locationPreference)
 	if err != nil {
-		return dtos.PaginatedJobResponse{}, fmt.Errorf("failed to analyze resume: %w", err)
+		return nil, fmt.Errorf("failed to fetch jobs: %w", err)
 	}
 
 	if len(jobs) == 0 {
-		return dtos.PaginatedJobResponse{
-			Jobs:       []dtos.RankedJob{},
-			TotalJobs:  0,
-			Page:       pagination.Page,
-			PageSize:   pagination.PageSize,
-			TotalPages: 0,
-			Success:    true,
-		}, nil
+		return []dtos.RankedJob{}, nil
 	}
 
 	fmt.Printf("Ranking %d jobs based on resume relevance...\n", len(jobs))
 	rankedJobs, err := s.rankingClient.RerankJobs(ctx, pdfBytes, jobs)
 	if err != nil {
-		return dtos.PaginatedJobResponse{}, fmt.Errorf("failed to rank jobs: %w", err)
+		return nil, fmt.Errorf("failed to rank jobs: %w", err)
 	}
 
-	totalJobs := len(rankedJobs)
-	totalPages := int(math.Ceil(float64(totalJobs) / float64(pagination.PageSize)))
-
-	startIndex := (pagination.Page - 1) * pagination.PageSize
-	endIndex := startIndex + pagination.PageSize
-
-	if startIndex >= totalJobs {
-		return dtos.PaginatedJobResponse{
-			Jobs:       []dtos.RankedJob{},
-			TotalJobs:  totalJobs,
-			Page:       pagination.Page,
-			PageSize:   pagination.PageSize,
-			TotalPages: totalPages,
-			Success:    true,
-		}, nil
-	}
-
-	if endIndex > totalJobs {
-		endIndex = totalJobs
-	}
-
-	paginatedJobs := rankedJobs[startIndex:endIndex]
-	
-	fmt.Printf("Returning page %d of %d (jobs %d-%d of %d total)\n", 
-		pagination.Page, totalPages, startIndex+1, endIndex, totalJobs)
-
-	return dtos.PaginatedJobResponse{
-		Jobs:       paginatedJobs,
-		TotalJobs:  totalJobs,
-		Page:       pagination.Page,
-		PageSize:   pagination.PageSize,
-		TotalPages: totalPages,
-		Success:    true,
-	}, nil
+	fmt.Printf("Successfully processed and ranked %d jobs\n", len(rankedJobs))
+	return rankedJobs, nil
 }

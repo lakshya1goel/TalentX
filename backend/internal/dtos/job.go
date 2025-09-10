@@ -52,16 +52,8 @@ type RankedJob struct {
 	ExperienceMatch string   `json:"experience_match"`
 }
 
-type PaginationRequest struct {
-	Page     int `json:"page" form:"page" binding:"min=1"`
-	PageSize int `json:"page_size" form:"page_size" binding:"min=1,max=100"`
-}
-
-type PaginatedJobResponse struct {
-	Jobs       []RankedJob `json:"jobs"`
-	TotalJobs  int         `json:"total_jobs"`
-	Page       int         `json:"page"`
-	PageSize   int         `json:"page_size"`
-	TotalPages int         `json:"total_pages"`
-	Success    bool        `json:"success"`
+type JobSearchResponse struct {
+	Jobs    []RankedJob `json:"jobs"`
+	Total   int         `json:"total"`
+	Success bool        `json:"success"`
 }
