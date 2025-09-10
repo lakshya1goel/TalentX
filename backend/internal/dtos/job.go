@@ -46,7 +46,7 @@ type JobSearchResult struct {
 
 type RankedJob struct {
 	Job             Job      `json:"job"`
-	RelevanceScore  float64  `json:"relevance_score"`
+	PercentMatch    float64  `json:"percent_match"`
 	MatchReason     string   `json:"match_reason"`
 	SkillsMatched   []string `json:"skills_matched"`
 	ExperienceMatch string   `json:"experience_match"`

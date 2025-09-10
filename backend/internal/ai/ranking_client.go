@@ -86,7 +86,7 @@ func (r *RerankingClient) parseRankingResponse(result *genai.GenerateContentResp
 
 	var rankings []struct {
 		JobIndex        int      `json:"job_index"`
-		RelevanceScore  float64  `json:"relevance_score"`
+		PercentMatch    float64  `json:"percent_match"`
 		MatchReason     string   `json:"match_reason"`
 		SkillsMatched   []string `json:"skills_matched"`
 		ExperienceMatch string   `json:"experience_match"`
@@ -109,7 +109,7 @@ func (r *RerankingClient) parseRankingResponse(result *genai.GenerateContentResp
 
 			rankedJobs = append(rankedJobs, dtos.RankedJob{
 				Job:             originalJobs[ranking.JobIndex],
-				RelevanceScore:  ranking.RelevanceScore,
+				PercentMatch:    ranking.PercentMatch,
 				MatchReason:     matchReason,
 				SkillsMatched:   ranking.SkillsMatched,
 				ExperienceMatch: ranking.ExperienceMatch,
@@ -126,7 +126,7 @@ func (r *RerankingClient) parseRankingResponse(result *genai.GenerateContentResp
 		if !rankedIndices[i] {
 			rankedJobs = append(rankedJobs, dtos.RankedJob{
 				Job:             job,
-				RelevanceScore:  3.0,
+				PercentMatch:    50.0,
 				MatchReason:     "Job not specifically analyzed by AI",
 				SkillsMatched:   []string{},
 				ExperienceMatch: "Unknown",
@@ -143,14 +143,14 @@ func (r *RerankingClient) fallbackRanking(jobs []dtos.Job) []dtos.RankedJob {
 	var rankedJobs []dtos.RankedJob
 
 	for i, job := range jobs {
-		score := 5.0 - float64(i)*0.1
-		if score < 1.0 {
-			score = 1.0
+		percentage := 80.0 - float64(i)*5.0
+		if percentage < 30.0 {
+			percentage = 30.0
 		}
 
 		rankedJobs = append(rankedJobs, dtos.RankedJob{
 			Job:             job,
-			RelevanceScore:  score,
+			PercentMatch:    percentage,
 			MatchReason:     "Fallback ranking - AI parsing failed",
 			SkillsMatched:   []string{},
 			ExperienceMatch: "Unknown",
