@@ -86,7 +86,7 @@ func (r *RerankingClient) parseRankingResponse(result *genai.GenerateContentResp
 
 	var rankings []struct {
 		JobIndex        int      `json:"job_index"`
-		PercentMatch    float64  `json:"percent_match"`
+		MatchScore      float64  `json:"match_score"`
 		MatchReason     string   `json:"match_reason"`
 		SkillsMatched   []string `json:"skills_matched"`
 		ExperienceMatch string   `json:"experience_match"`
@@ -101,7 +101,9 @@ func (r *RerankingClient) parseRankingResponse(result *genai.GenerateContentResp
 
 	var rankedJobs []dtos.RankedJob
 	for _, ranking := range rankings {
-		if ranking.JobIndex >= 0 && ranking.JobIndex < len(originalJobs) {
+		percentMatch := ranking.MatchScore * 100.0
+
+		if ranking.JobIndex >= 0 && ranking.JobIndex < len(originalJobs) && percentMatch >= 30.0 {
 			matchReason := ranking.MatchReason
 			if ranking.Concerns != "" {
 				matchReason += " | Concerns: " + ranking.Concerns
@@ -109,27 +111,10 @@ func (r *RerankingClient) parseRankingResponse(result *genai.GenerateContentResp
 
 			rankedJobs = append(rankedJobs, dtos.RankedJob{
 				Job:             originalJobs[ranking.JobIndex],
-				PercentMatch:    ranking.PercentMatch,
+				PercentMatch:    percentMatch,
 				MatchReason:     matchReason,
 				SkillsMatched:   ranking.SkillsMatched,
 				ExperienceMatch: ranking.ExperienceMatch,
-			})
-		}
-	}
-
-	rankedIndices := make(map[int]bool)
-	for _, ranking := range rankings {
-		rankedIndices[ranking.JobIndex] = true
-	}
-
-	for i, job := range originalJobs {
-		if !rankedIndices[i] {
-			rankedJobs = append(rankedJobs, dtos.RankedJob{
-				Job:             job,
-				PercentMatch:    50.0,
-				MatchReason:     "Job not specifically analyzed by AI",
-				SkillsMatched:   []string{},
-				ExperienceMatch: "Unknown",
 			})
 		}
 	}
@@ -144,17 +129,16 @@ func (r *RerankingClient) fallbackRanking(jobs []dtos.Job) []dtos.RankedJob {
 
 	for i, job := range jobs {
 		percentage := 80.0 - float64(i)*5.0
-		if percentage < 30.0 {
-			percentage = 30.0
-		}
 
-		rankedJobs = append(rankedJobs, dtos.RankedJob{
-			Job:             job,
-			PercentMatch:    percentage,
-			MatchReason:     "Fallback ranking - AI parsing failed",
-			SkillsMatched:   []string{},
-			ExperienceMatch: "Unknown",
-		})
+		if percentage >= 30.0 {
+			rankedJobs = append(rankedJobs, dtos.RankedJob{
+				Job:             job,
+				PercentMatch:    percentage,
+				MatchReason:     "Fallback ranking - AI parsing failed",
+				SkillsMatched:   []string{},
+				ExperienceMatch: "Unknown",
+			})
+		}
 	}
 
 	return rankedJobs
