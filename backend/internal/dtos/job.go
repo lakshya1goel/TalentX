@@ -37,3 +37,23 @@ type ErrorResponse struct {
 	Success   bool      `json:"success"`
 	Timestamp time.Time `json:"timestamp"`
 }
+
+type JobSearchResult struct {
+	Jobs   []Job
+	Error  error
+	Source string
+}
+
+type RankedJob struct {
+	Job             Job      `json:"job"`
+	PercentMatch    float64  `json:"percent_match"`
+	MatchReason     string   `json:"match_reason"`
+	SkillsMatched   []string `json:"skills_matched"`
+	ExperienceMatch string   `json:"experience_match"`
+}
+
+type JobSearchResponse struct {
+	Jobs    []RankedJob `json:"jobs"`
+	Total   int         `json:"total"`
+	Success bool        `json:"success"`
+}

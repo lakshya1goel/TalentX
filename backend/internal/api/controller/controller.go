@@ -113,7 +113,7 @@ func (c *JobController) FetchJobs(ctx *gin.Context) {
 		return
 	}
 
-	jobs, err := c.service.FetchJobs(ctx, pdfBytes, locationPreference)
+	rankedJobs, err := c.service.FetchAndRankAllJobs(ctx, pdfBytes, locationPreference)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, dtos.ErrorResponse{
 			Error:     err.Error(),
@@ -123,5 +123,11 @@ func (c *JobController) FetchJobs(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, jobs)
+	response := dtos.JobSearchResponse{
+		Jobs:    rankedJobs,
+		Total:   len(rankedJobs),
+		Success: true,
+	}
+
+	ctx.JSON(http.StatusOK, response)
 }

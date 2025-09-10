@@ -10,24 +10,41 @@ import (
 )
 
 type JobService interface {
-	FetchJobs(ctx context.Context, pdfBytes []byte, locationPreference dtos.LocationPreference) ([]dtos.Job, error)
+	FetchAndRankAllJobs(ctx context.Context, pdfBytes []byte, locationPreference dtos.LocationPreference) ([]dtos.RankedJob, error)
 }
 
 type jobService struct {
-	aiClient ai.AIClient
+	aiClient      *ai.AIClient
+	rankingClient *ai.RerankingClient
 }
 
 func NewJobService() JobService {
+	ctx := context.Background()
+	apiKey := config.GetAPIKey()
+
 	return &jobService{
-		aiClient: *ai.NewAIClient(context.Background(), config.GetAPIKey()),
+		aiClient:      ai.NewAIClient(ctx, apiKey),
+		rankingClient: ai.NewRerankingClient(ctx, apiKey),
 	}
 }
 
-func (s *jobService) FetchJobs(ctx context.Context, pdfBytes []byte, locationPreference dtos.LocationPreference) ([]dtos.Job, error) {
+func (s *jobService) FetchAndRankAllJobs(ctx context.Context, pdfBytes []byte, locationPreference dtos.LocationPreference) ([]dtos.RankedJob, error) {
+	fmt.Println("Fetching jobs from various sources...")
 	jobs, err := s.aiClient.GetJobsFromResume(ctx, pdfBytes, locationPreference)
 	if err != nil {
-		return []dtos.Job{}, fmt.Errorf("failed to analyze resume: %w", err)
+		return nil, fmt.Errorf("failed to fetch jobs: %w", err)
 	}
 
-	return jobs, nil
+	if len(jobs) == 0 {
+		return []dtos.RankedJob{}, nil
+	}
+
+	fmt.Printf("Ranking %d jobs based on resume relevance...\n", len(jobs))
+	rankedJobs, err := s.rankingClient.RerankJobs(ctx, pdfBytes, jobs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to rank jobs: %w", err)
+	}
+
+	fmt.Printf("Successfully processed and ranked %d jobs\n", len(rankedJobs))
+	return rankedJobs, nil
 }
