@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
+	"sync"
 
 	"github.com/lakshya1goel/job-assistance/internal/dtos"
 	"google.golang.org/genai"
@@ -30,6 +32,86 @@ func (r *RerankingClient) RerankJobs(ctx context.Context, pdfBytes []byte, jobs 
 		return []dtos.RankedJob{}, nil
 	}
 
+	if len(jobs) > 60 {
+		fmt.Printf("Limiting ranking to first 60 jobs out of %d total jobs\n", len(jobs))
+		jobs = jobs[:60]
+	}
+
+	if len(jobs) > 10 {
+		return r.RerankJobsParallel(ctx, pdfBytes, jobs)
+	}
+
+	return r.rerankJobsSingle(ctx, pdfBytes, jobs)
+}
+
+func (r *RerankingClient) RerankJobsParallel(ctx context.Context, pdfBytes []byte, jobs []dtos.Job) ([]dtos.RankedJob, error) {
+	const batchSize = 10
+	const maxConcurrency = 3
+
+	fmt.Printf("Processing %d jobs in parallel batches (size: %d, concurrency: %d)\n", len(jobs), batchSize, maxConcurrency)
+
+	var batches [][]dtos.Job
+	for i := 0; i < len(jobs); i += batchSize {
+		end := i + batchSize
+		if end > len(jobs) {
+			end = len(jobs)
+		}
+		batches = append(batches, jobs[i:end])
+	}
+
+	fmt.Printf("Created %d batches for processing\n", len(batches))
+
+	semaphore := make(chan struct{}, maxConcurrency)
+	results := make(chan dtos.BatchResult, len(batches))
+	var wg sync.WaitGroup
+
+	for batchIndex, batch := range batches {
+		wg.Add(1)
+		go func(batchIdx int, jobBatch []dtos.Job) {
+			defer wg.Done()
+
+			semaphore <- struct{}{}
+			defer func() { <-semaphore }()
+
+			fmt.Printf("Processing batch %d with %d jobs\n", batchIdx+1, len(jobBatch))
+
+			rankedBatch, err := r.rerankJobsSingle(ctx, pdfBytes, jobBatch)
+			if err != nil {
+				fmt.Printf("Error ranking batch %d: %v, using fallback\n", batchIdx+1, err)
+				rankedBatch = r.fallbackRanking(jobBatch)
+			}
+
+			fmt.Printf("Completed batch %d with %d ranked jobs\n", batchIdx+1, len(rankedBatch))
+
+			results <- dtos.BatchResult{
+				Jobs:       rankedBatch,
+				BatchIndex: batchIdx,
+			}
+		}(batchIndex, batch)
+	}
+
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	var allRanked []dtos.RankedJob
+	batchCount := 0
+	for result := range results {
+		allRanked = append(allRanked, result.Jobs...)
+		batchCount++
+		fmt.Printf("Collected results from batch %d (%d/%d batches complete)\n", result.BatchIndex+1, batchCount, len(batches))
+	}
+
+	sort.Slice(allRanked, func(i, j int) bool {
+		return allRanked[i].PercentMatch > allRanked[j].PercentMatch
+	})
+
+	fmt.Printf("Successfully ranked and sorted %d jobs from %d batches\n", len(allRanked), len(batches))
+	return allRanked, nil
+}
+
+func (r *RerankingClient) rerankJobsSingle(ctx context.Context, pdfBytes []byte, jobs []dtos.Job) ([]dtos.RankedJob, error) {
 	prompt := r.RerankingPrompt(jobs)
 
 	parts := []*genai.Part{

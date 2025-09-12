@@ -143,37 +143,3 @@ func (a *AIClient) executeParallelJobSearch(functionCalls []*genai.FunctionCall)
 	fmt.Printf("Total jobs found across all sources: %d\n", len(allJobs))
 	return allJobs
 }
-
-// func (a *AIClient) callJobAPIWithLocation(functionCall *genai.FunctionCall) []dtos.Job {
-// 	query, ok := functionCall.Args["query"].(string)
-// 	if !ok {
-// 		fmt.Println("No query found")
-// 		return []dtos.Job{}
-// 	}
-
-// 	fmt.Printf("Searching for: %s\n", query)
-
-// 	switch functionCall.Name {
-// 	case "search_jsearch_jobs":
-// 		jobs, err := SearchJobsJSearch(query)
-// 		if err != nil {
-// 			fmt.Printf("JSearch error: %v\n", err)
-// 			return []dtos.Job{}
-// 		}
-// 		fmt.Printf("JSearch found %d jobs\n", len(jobs))
-// 		return jobs
-
-// 	case "search_linkup_jobs":
-// 		jobs, err := SearchJobsLinkUp(query)
-// 		if err != nil {
-// 			fmt.Printf("LinkUp error: %v\n", err)
-// 			return []dtos.Job{}
-// 		}
-// 		fmt.Printf("LinkUp found %d jobs\n", len(jobs))
-// 		return jobs
-
-// 	default:
-// 		fmt.Printf("Unknown function: %s\n", functionCall.Name)
-// 		return []dtos.Job{}
-// 	}
-// }
