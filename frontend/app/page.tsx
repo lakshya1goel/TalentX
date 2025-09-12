@@ -5,15 +5,15 @@ import { useState } from 'react';
 import ResumeUploader from '../components/ResumeUploader';
 import JobsList from '../components/JobsList';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { Job } from '../types/job';
+import { RankedJob } from '../types/job';
 
 export default function Home() {
-  const [jobs, setJobs] = useState<Job[]>([]);
+  const [jobs, setJobs] = useState<RankedJob[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showUploader, setShowUploader] = useState(true);
 
-  const handleJobsReceived = (newJobs: Job[]) => {
+  const handleJobsReceived = (newJobs: RankedJob[]) => {
     setJobs(newJobs);
     setShowUploader(false);
   };

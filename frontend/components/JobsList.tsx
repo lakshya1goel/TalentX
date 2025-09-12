@@ -6,7 +6,7 @@ import { paginateArray } from '../utils/api';
 import Pagination from './Pagination';
 
 interface JobsListProps {
-  jobs: Job[];
+  jobs: RankedJob[];
 }
 
 // Circular Progress Ring Component
@@ -98,18 +98,8 @@ export default function JobsList({ jobs }: JobsListProps) {
   const [pageSize, setPageSize] = useState(10);
 
   const rankedJobs: RankedJob[] = useMemo(() => {
-    return jobs.map((job, index) => {
-      // Ensure percentage stays between 30-95% for better distribution
-      const percentage = Math.max(30, 95 - (index * 3));
-      
-      return {
-        job,
-        percent_match: percentage,
-        match_reason: `Excellent match for an intern, especially with the candidate's ${job.title.toLowerCase()} experience. Strong foundational skills and high potential make this a great fit.`,
-        skills_matched: ['Software Engineering', 'General Development'],
-        experience_match: 'Perfect match for an intern'
-      };
-    });
+    // Use the actual ranking data from backend instead of hardcoded fake data
+    return jobs;
   }, [jobs]);
 
   // Client-side pagination
