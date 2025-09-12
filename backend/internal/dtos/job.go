@@ -57,3 +57,8 @@ type JobSearchResponse struct {
 	Total   int         `json:"total"`
 	Success bool        `json:"success"`
 }
+
+type BatchResult struct {
+	Jobs       []RankedJob
+	BatchIndex int
+}

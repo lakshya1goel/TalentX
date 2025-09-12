@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { uploadResumeAndGetJobs, LocationPreference } from '../utils/api';
+import { uploadResumeAndGetJobs, LocationPreference, RankedJob } from '../utils/api';
 import { Job } from '../types/job';
 
 interface ResumeUploaderProps {
-  onJobsReceived: (jobs: Job[]) => void;
+  onJobsReceived: (jobs: RankedJob[]) => void;
   onError: (error: string) => void;
   onLoading: (loading: boolean) => void;
 }
@@ -39,8 +39,7 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
       onLoading(true);
       onError('');
       const rankedJobs = await uploadResumeAndGetJobs(file, locationPreference);
-      const jobs: Job[] = rankedJobs.map(rankedJob => rankedJob.job);
-      onJobsReceived(jobs);
+      onJobsReceived(rankedJobs);
     } catch (error) {
       onError(error instanceof Error ? error.message : 'An error occurred while processing your resume.');
     } finally {
