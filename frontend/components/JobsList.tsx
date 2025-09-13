@@ -12,9 +12,9 @@ interface JobsListProps {
 // Circular Progress Ring Component
 const CircularProgress: React.FC<{ percentage: number; size?: number }> = ({ 
   percentage, 
-  size = 60 
+  size = 100 
 }) => {
-  const radius = (size - 8) / 2;
+  const radius = (size - 16) / 2;
   const circumference = radius * 2 * Math.PI;
   const strokeDasharray = circumference;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
@@ -63,7 +63,7 @@ const CircularProgress: React.FC<{ percentage: number; size?: number }> = ({
           cy={size / 2}
           r={radius}
           stroke="rgba(29,205,159,0.1)"
-          strokeWidth="4"
+          strokeWidth="8"
           fill="none"
         />
         {/* Progress circle */}
@@ -72,7 +72,7 @@ const CircularProgress: React.FC<{ percentage: number; size?: number }> = ({
           cy={size / 2}
           r={radius}
           stroke={`url(#${getGradientId(percentage)})`}
-          strokeWidth="4"
+          strokeWidth="8"
           fill="none"
           strokeLinecap="round"
           strokeDasharray={strokeDasharray}
@@ -85,7 +85,7 @@ const CircularProgress: React.FC<{ percentage: number; size?: number }> = ({
       </svg>
       {/* Percentage text */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-xs font-bold text-white">
+        <span className="text-sm font-bold text-white">
           {Math.round(percentage)}%
         </span>
       </div>
@@ -169,13 +169,8 @@ const JobCard: React.FC<{ rankedJob: RankedJob; rank: number }> = ({ rankedJob, 
     >
       <div className="flex items-start justify-between mb-6">
         <div className="flex items-center gap-4 flex-1">
-          <div 
-            className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
-            style={{
-              background: 'linear-gradient(135deg, #16a085, #138f7a)'
-            }}
-          >
-            {rank}
+          <div className="text-green-400 font-bold text-2xl">
+            #{rank}
           </div>
           <div className="flex-1">
             <h3 className="text-xl font-semibold text-white mb-1">{job.title}</h3>
@@ -198,7 +193,7 @@ const JobCard: React.FC<{ rankedJob: RankedJob; rank: number }> = ({ rankedJob, 
         
         {/* Circular Progress Ring for Percentage */}
         <div className="flex flex-col items-center gap-2">
-          <CircularProgress percentage={percent_match} size={80} />
+          <CircularProgress percentage={percent_match} size={120} />
           <span className="text-xs text-gray-400 font-medium">Match</span>
         </div>
       </div>
