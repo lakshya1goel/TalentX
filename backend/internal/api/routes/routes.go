@@ -8,6 +8,6 @@ import (
 func JobRoutes(router *gin.RouterGroup, jobController *controller.JobController) {
 	jobRouter := router.Group("/job")
 	{
-		jobRouter.POST("/", jobController.FetchJobs)
+		jobRouter.POST("/", jobController.FetchStructuredJobs)
 	}
 }

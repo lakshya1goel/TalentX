@@ -20,7 +20,7 @@ func NewJobController() *JobController {
 	}
 }
 
-func (c *JobController) FetchJobs(ctx *gin.Context) {
+func (c *JobController) FetchStructuredJobs(ctx *gin.Context) {
 	file, header, err := ctx.Request.FormFile("resume")
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, dtos.ErrorResponse{
@@ -113,7 +113,7 @@ func (c *JobController) FetchJobs(ctx *gin.Context) {
 		return
 	}
 
-	rankedJobs, err := c.service.FetchAndRankAllJobs(ctx, pdfBytes, locationPreference)
+	rankedJobs, err := c.service.FetchAndRankStructuredJobs(ctx, pdfBytes, locationPreference)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, dtos.ErrorResponse{
 			Error:     err.Error(),

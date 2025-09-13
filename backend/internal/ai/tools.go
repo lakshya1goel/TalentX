@@ -27,20 +27,22 @@ func (a *AIClient) Tools() []*genai.Tool {
 					},
 				},
 				{
-					Name: "search_linkup_jobs",
-					Description: `Search for jobs using LinkUp API. This provides high-quality job data directly from company career pages.
-					Use this for comprehensive job market coverage and to find jobs that might not be on traditional job boards.
-					Best for: Enterprise companies, specific company searches, and comprehensive market analysis.`,
+					Name: "search_structured_jobs",
+					Description: `Search for jobs using structured LinkUp API with detailed job information extraction.
+					This provides structured job data including experience level, required skills, salary, and remote work options.
+					Use this when you need detailed job analysis and matching capabilities.
+					Best for: Detailed job matching, skill analysis, and comprehensive job evaluation.`,
 					Parameters: &genai.Schema{
 						Type: genai.TypeObject,
 						Properties: map[string]*genai.Schema{
 							"query": {
 								Type: genai.TypeString,
-								Description: `Job search query optimized for LinkUp API. Should focus on:
-								- Core technical skills and technologies
-								- Industry-specific terms
-								- Job titles and roles
-								Example: "Machine Learning Engineer" or "Full Stack Developer React Node.js"`,
+								Description: `Detailed job search query for structured extraction. Should include:
+								- Specific role titles and responsibilities
+								- Required technical skills and experience level
+								- Industry context and domain expertise
+								- Location preferences and work arrangements
+								Example: "Senior Software Engineer with Python Django experience for fintech startup"`,
 							},
 						},
 						Required: []string{"query"},

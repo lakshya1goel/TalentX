@@ -10,7 +10,7 @@ import (
 )
 
 type JobService interface {
-	FetchAndRankAllJobs(ctx context.Context, pdfBytes []byte, locationPreference dtos.LocationPreference) ([]dtos.RankedJob, error)
+	FetchAndRankStructuredJobs(ctx context.Context, pdfBytes []byte, locationPreference dtos.LocationPreference) ([]dtos.RankedJob, error)
 }
 
 type jobService struct {
@@ -28,23 +28,26 @@ func NewJobService() JobService {
 	}
 }
 
-func (s *jobService) FetchAndRankAllJobs(ctx context.Context, pdfBytes []byte, locationPreference dtos.LocationPreference) ([]dtos.RankedJob, error) {
-	fmt.Println("Fetching jobs from various sources...")
+func (s *jobService) FetchAndRankStructuredJobs(ctx context.Context, pdfBytes []byte, locationPreference dtos.LocationPreference) ([]dtos.RankedJob, error) {
+	fmt.Println("Starting structured job search flow...")
+
+	fmt.Println("Parsing resume and searching with structured output...")
 	jobs, err := s.aiClient.GetJobsFromResume(ctx, pdfBytes, locationPreference)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch jobs: %w", err)
+		return nil, fmt.Errorf("failed to get structured jobs from resume: %w", err)
 	}
 
 	if len(jobs) == 0 {
+		fmt.Println("No jobs found from structured search")
 		return []dtos.RankedJob{}, nil
 	}
 
-	fmt.Printf("Ranking %d jobs based on resume relevance...\n", len(jobs))
+	fmt.Printf("Re-ranking %d structured jobs based on resume relevance...\n", len(jobs))
 	rankedJobs, err := s.rankingClient.RerankJobs(ctx, pdfBytes, jobs)
 	if err != nil {
-		return nil, fmt.Errorf("failed to rank jobs: %w", err)
+		return nil, fmt.Errorf("failed to rank structured jobs: %w", err)
 	}
 
-	fmt.Printf("Successfully processed and ranked %d jobs\n", len(rankedJobs))
+	fmt.Printf("Successfully processed and ranked %d structured jobs\n", len(rankedJobs))
 	return rankedJobs, nil
 }
