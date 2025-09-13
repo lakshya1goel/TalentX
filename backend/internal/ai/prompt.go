@@ -228,7 +228,7 @@ func (r *RerankingClient) RerankingPrompt(jobs []dtos.Job) string {
 	jobsJSON, _ := json.MarshalIndent(jobs, "", "  ")
 
 	prompt := fmt.Sprintf(`
-	You are a professional career advisor and resume analyzer. Your task is to analyze the provided resume and score job opportunities based on their alignment with the candidate's profile.
+	You are a professional career advisor and resume analyzer. Your task is to analyze the provided resume and score job opportunities based on their alignment with the candidate's profile. Fetch the job descriptions from the job portal url and analyze the job description based on the candidate's profile.
 	
 	**SCORING FRAMEWORK (0.0 - 1.0):**
 	Use the FULL range from 0.0 to 1.0. Each score should reflect the true match quality:
@@ -243,7 +243,7 @@ func (r *RerankingClient) RerankingPrompt(jobs []dtos.Job) string {
 	- 0.3-0.39: Weak match - limited alignment, significant gaps
 	- 0.2-0.29: Poor match - minimal relevance, major mismatches
 	- 0.1-0.19: Very poor match - little to no alignment
-	- 0.0-0.09: No match - completely irrelevant
+	- 0.0-0.09: No match - completely irrelevant or the jobs which are not direct link to an opening rather its a job portal url, like 120000+ jobs in India etc.
 	
 	**EVALUATION CRITERIA:**
 	

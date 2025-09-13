@@ -5,6 +5,7 @@ import { useState } from 'react';
 import ResumeUploader from '../components/ResumeUploader';
 import JobsList from '../components/JobsList';
 import LoadingSpinner from '../components/LoadingSpinner';
+
 import { RankedJob } from '../types/job';
 
 export default function Home() {
@@ -67,9 +68,29 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           {showUploader && (
             <div className="text-center mb-8 sm:mb-12">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white">
+              {/* TalentX Logo/Brand */}
+              <div className="mb-6 sm:mb-8">
+                <div className="inline-flex items-center justify-center w-16 sm:w-20 h-16 sm:h-20 mb-4">
+                  <img 
+                    src="/talentx-icon.svg" 
+                    alt="TalentX Logo" 
+                    className="w-full h-full"
+                    style={{
+                      filter: 'drop-shadow(0 20px 40px rgba(29,205,159,.3))'
+                    }}
+                  />
+                </div>
+                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-2">
+                  <span style={{ background: 'linear-gradient(135deg, #16a085, #1dd1a1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                    Talent
+                  </span>
+                  <span className="text-white">X</span>
+                </h1>
+              </div>
+              
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3">
                 Find Your Perfect Job
-              </h1>
+              </h2>
               <p className="mt-3 max-w-sm sm:max-w-md lg:max-w-3xl mx-auto text-sm sm:text-base md:text-lg lg:text-xl text-gray-300 md:mt-5">
                 Upload your resume and let our AI find the best job opportunities tailored to your skills and experience.
               </p>
@@ -88,6 +109,23 @@ export default function Home() {
 
           {!showUploader && !loading && (
             <div className="text-center mb-6 sm:mb-8">
+              {/* Small TalentX branding on results page */}
+              <div className="flex items-center justify-center mb-4">
+                <div className="w-8 h-8 flex items-center justify-center mr-2">
+                  <img 
+                    src="/talentx-icon.svg" 
+                    alt="TalentX Logo" 
+                    className="w-full h-full"
+                  />
+                </div>
+                <h1 className="text-xl font-bold text-white">
+                  <span style={{ background: 'linear-gradient(135deg, #16a085, #1dd1a1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                    Talent
+                  </span>
+                  <span className="text-white">X</span>
+                </h1>
+              </div>
+              
               <button
                 onClick={handleSearchAgain}
                 className="inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 border-0 text-sm sm:text-base font-medium rounded-lg text-white transition-all duration-200 hover:scale-105"

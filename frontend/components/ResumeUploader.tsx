@@ -17,8 +17,9 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
     locations: []
   });
   const [locationInput, setLocationInput] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  const handleFileUpload = useCallback(async (file: File) => {
+  const handleFileUpload = useCallback((file: File) => {
     if (file.type !== 'application/pdf') {
       onError('Please upload a PDF file only.');
       return;
@@ -26,6 +27,16 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
 
     if (file.size > 10 * 1024 * 1024) {
       onError('File size must be less than 10MB.');
+      return;
+    }
+
+    setSelectedFile(file);
+    onError(''); // Clear any previous errors
+  }, [onError]);
+
+  const handleSubmit = useCallback(async () => {
+    if (!selectedFile) {
+      onError('Please upload a resume file first.');
       return;
     }
 
@@ -38,14 +49,14 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
     try {
       onLoading(true);
       onError('');
-      const rankedJobs = await uploadResumeAndGetJobs(file, locationPreference);
+      const rankedJobs = await uploadResumeAndGetJobs(selectedFile, locationPreference);
       onJobsReceived(rankedJobs);
     } catch (error) {
       onError(error instanceof Error ? error.message : 'An error occurred while processing your resume.');
     } finally {
       onLoading(false);
     }
-  }, [onJobsReceived, onError, onLoading, locationPreference]);
+  }, [selectedFile, locationPreference, onJobsReceived, onError, onLoading]);
 
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -251,10 +262,27 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
             <p className="text-xs sm:text-sm text-gray-400 mb-3 sm:mb-4">
               Drag and drop your PDF resume here, or click to browse
             </p>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-500 mb-4">
               Maximum file size: 10MB | Supported format: PDF
             </p>
+            
+            {/* Selected File Display */}
+            {selectedFile && (
+              <div className="mb-4 p-3 rounded-lg" style={{
+                background: 'rgba(22,160,133,0.1)',
+                border: '1px solid rgba(29,205,159,.3)'
+              }}>
+                <div className="flex items-center">
+                  <svg className="w-4 h-4 text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-sm text-white font-medium">{selectedFile.name}</span>
+                  <span className="text-xs text-gray-400 ml-2">({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)</span>
+                </div>
+              </div>
+            )}
           </div>
+          
           <div>
             <input
               type="file"
@@ -265,19 +293,42 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
             />
             <label
               htmlFor="resume-upload"
-              className="inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-semibold rounded-lg text-white cursor-pointer transition-all duration-200 hover:scale-105"
+              className="inline-flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-semibold rounded-lg text-white cursor-pointer transition-all duration-200 hover:scale-105"
               style={{
-                background: 'linear-gradient(135deg, #16a085, #138f7a)',
-                boxShadow: '0 15px 35px rgba(29,205,159,.4), 0 0 0 1px rgba(29,205,159,.2)'
+                background: selectedFile 
+                  ? 'rgba(29,205,159,.2)' 
+                  : 'linear-gradient(135deg, #16a085, #138f7a)',
+                boxShadow: selectedFile 
+                  ? '0 0 0 1px rgba(29,205,159,.3)' 
+                  : '0 15px 35px rgba(29,205,159,.4), 0 0 0 1px rgba(29,205,159,.2)',
+                border: selectedFile ? '1px solid rgba(29,205,159,.3)' : 'none'
               }}
             >
               <svg className="w-3 sm:w-4 h-3 sm:h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              Choose File
+              {selectedFile ? 'Change File' : 'Choose File'}
             </label>
           </div>
         </div>
+      </div>
+
+      {/* Submit Button - Outside the upload box */}
+      <div className="text-center mt-6">
+        <button
+          onClick={handleSubmit}
+          disabled={!selectedFile}
+          className="inline-flex items-center justify-center px-8 sm:px-12 py-3 sm:py-4 text-sm sm:text-base font-semibold rounded-lg text-white transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          style={{
+            background: 'linear-gradient(135deg, #16a085, #138f7a)',
+            boxShadow: '0 15px 35px rgba(29,205,159,.4), 0 0 0 1px rgba(29,205,159,.2)'
+          }}
+        >
+          <svg className="w-4 sm:w-5 h-4 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          Find Jobs
+        </button>
       </div>
     </div>
   );
