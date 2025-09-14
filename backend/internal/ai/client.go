@@ -47,7 +47,7 @@ func (a *AIClient) GetJobsFromResume(ctx context.Context, pdfBytes []byte, locat
 
 	result, err := a.Client.Models.GenerateContent(
 		ctx,
-		"gemini-2.5-flash",
+		"gemini-2.0-flash",
 		contents,
 		&genai.GenerateContentConfig{
 			Tools: tools,

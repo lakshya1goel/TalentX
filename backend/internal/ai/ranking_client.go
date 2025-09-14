@@ -243,7 +243,7 @@ func (r *RerankingClient) evaluateJobMatch(ctx context.Context, candidateProfile
 	temp := float32(0.1)
 	result, err := r.Client.Models.GenerateContent(
 		ctx,
-		"gemini-2.5-flash",
+		"gemini-2.0-flash",
 		contents,
 		&genai.GenerateContentConfig{
 			Temperature: &temp,
