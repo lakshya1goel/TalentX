@@ -37,14 +37,80 @@ func (r *RerankingClient) RerankJobs(ctx context.Context, pdfBytes []byte, jobs 
 		jobs = jobs[:60]
 	}
 
-	if len(jobs) > 10 {
-		return r.RerankJobsParallel(ctx, pdfBytes, jobs)
+	candidateProfile, err := r.extractCandidateProfile(ctx, pdfBytes)
+	if err != nil {
+		fmt.Printf("Error extracting candidate profile: %v\n", err)
+		return r.fallbackRanking(jobs), nil
 	}
 
-	return r.rerankJobsSingle(ctx, pdfBytes, jobs)
+	if len(jobs) > 10 {
+		return r.RerankJobsParallel(ctx, candidateProfile, jobs)
+	}
+
+	return r.rerankJobsSingle(ctx, candidateProfile, jobs)
 }
 
-func (r *RerankingClient) RerankJobsParallel(ctx context.Context, pdfBytes []byte, jobs []dtos.Job) ([]dtos.RankedJob, error) {
+func (r *RerankingClient) extractCandidateProfile(ctx context.Context, pdfBytes []byte) (string, error) {
+	prompt := `
+You are a resume analyzer. Extract and summarize the candidate's profile from their resume.
+
+Provide a comprehensive summary including:
+- Job titles they would be suitable for
+- Seniority level (internship, entry level, junior, mid-level, senior)
+- Technical skills and expertise areas
+- Years of professional experience
+- Education background
+- Location preferences (if mentioned)
+- Work location preferences (remote/hybrid/on-site)
+- Industry experience
+- Notable projects or achievements
+
+Format this as a clear, structured profile summary.
+`
+
+	parts := []*genai.Part{
+		{
+			InlineData: &genai.Blob{
+				MIMEType: "application/pdf",
+				Data:     pdfBytes,
+			},
+		},
+		genai.NewPartFromText(prompt),
+	}
+
+	contents := []*genai.Content{
+		genai.NewContentFromParts(parts, genai.RoleUser),
+	}
+
+	temp := float32(0.1)
+	result, err := r.Client.Models.GenerateContent(
+		ctx,
+		"gemini-1.5-flash",
+		contents,
+		&genai.GenerateContentConfig{
+			Temperature: &temp,
+		},
+	)
+
+	if err != nil {
+		return "", fmt.Errorf("failed to extract candidate profile: %w", err)
+	}
+
+	if len(result.Candidates) == 0 || len(result.Candidates[0].Content.Parts) == 0 {
+		return "", fmt.Errorf("no profile response from AI")
+	}
+
+	profileText := ""
+	for _, part := range result.Candidates[0].Content.Parts {
+		if part.Text != "" {
+			profileText += part.Text
+		}
+	}
+
+	return profileText, nil
+}
+
+func (r *RerankingClient) RerankJobsParallel(ctx context.Context, candidateProfile string, jobs []dtos.Job) ([]dtos.RankedJob, error) {
 	const batchSize = 10
 	const maxConcurrency = 3
 
@@ -71,7 +137,7 @@ func (r *RerankingClient) RerankJobsParallel(ctx context.Context, pdfBytes []byt
 
 			fmt.Printf("Processing batch %d with %d jobs\n", batchIdx+1, len(jobBatch))
 
-			rankedBatch, err := r.rerankJobsSingle(ctx, pdfBytes, jobBatch)
+			rankedBatch, err := r.rerankJobsSingle(ctx, candidateProfile, jobBatch)
 			if err != nil {
 				fmt.Printf("Error ranking batch %d: %v, using fallback\n", batchIdx+1, err)
 				rankedBatch = r.fallbackRanking(jobBatch)
@@ -107,17 +173,67 @@ func (r *RerankingClient) RerankJobsParallel(ctx context.Context, pdfBytes []byt
 	return allRanked, nil
 }
 
-func (r *RerankingClient) rerankJobsSingle(ctx context.Context, pdfBytes []byte, jobs []dtos.Job) ([]dtos.RankedJob, error) {
-	prompt := r.RerankingPrompt(jobs)
+func (r *RerankingClient) rerankJobsSingle(ctx context.Context, candidateProfile string, jobs []dtos.Job) ([]dtos.RankedJob, error) {
+	var rankedJobs []dtos.RankedJob
+
+	for i, job := range jobs {
+		evaluation, err := r.evaluateJobMatch(ctx, candidateProfile, job)
+		if err != nil {
+			fmt.Printf("Error evaluating job %d: %v\n", i, err)
+			continue
+		}
+
+		if evaluation != nil && evaluation.PercentMatch >= 30.0 {
+			rankedJobs = append(rankedJobs, *evaluation)
+		}
+	}
+
+	sort.Slice(rankedJobs, func(i, j int) bool {
+		return rankedJobs[i].PercentMatch > rankedJobs[j].PercentMatch
+	})
+
+	return rankedJobs, nil
+}
+
+func (r *RerankingClient) evaluateJobMatch(ctx context.Context, candidateProfile string, job dtos.Job) (*dtos.RankedJob, error) {
+	systemMessage := `You are a job matching assistant. Your task is to evaluate a job based on its match with the candidate's profile, taking into account the job title, the skills required, the seniority level, the physical location (where the company offering the work is based in) and the working location (remote/hybrid/on-site). You then have to produce a match score (between 0 and 100) and justify that match score explaining your reasons for that.
+
+	Evaluation Criteria:
+	1. Job title alignment with candidate's potential roles
+	2. Required skills match with candidate's skills
+	3. Seniority level alignment (internship, entry level, junior, mid-level, senior)
+	4. Location preferences and work arrangement compatibility
+	5. Industry and domain experience relevance
+	6. Overall career trajectory fit
+
+	Provide your evaluation in the following JSON format:
+	{
+		"match_score": <integer between 0-100>,
+		"reasons": "<detailed explanation of the match evaluation>",
+		"skills_matched": ["<list of matched skills>"],
+		"experience_match": "<assessment of experience level fit>"
+	}`
+
+		jobJSON, _ := json.MarshalIndent(job, "", "  ")
+
+		userMessage := fmt.Sprintf(`System: %s
+
+	User: Here is my profile:
+
+	'''
+	%s
+	'''
+
+	And here is the JSON card of a job that I found:
+
+	'''
+	%s
+	'''
+
+	Can you evaluate the match for me?`, systemMessage, candidateProfile, string(jobJSON))
 
 	parts := []*genai.Part{
-		{
-			InlineData: &genai.Blob{
-				MIMEType: "application/pdf",
-				Data:     pdfBytes,
-			},
-		},
-		genai.NewPartFromText(prompt),
+		genai.NewPartFromText(userMessage),
 	}
 
 	contents := []*genai.Content{
@@ -135,15 +251,11 @@ func (r *RerankingClient) rerankJobsSingle(ctx context.Context, pdfBytes []byte,
 	)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to rerank jobs: %w", err)
+		return nil, fmt.Errorf("failed to evaluate job match: %w", err)
 	}
 
-	return r.parseRankingResponse(result, jobs)
-}
-
-func (r *RerankingClient) parseRankingResponse(result *genai.GenerateContentResponse, originalJobs []dtos.Job) ([]dtos.RankedJob, error) {
 	if len(result.Candidates) == 0 || len(result.Candidates[0].Content.Parts) == 0 {
-		return nil, fmt.Errorf("no response from AI")
+		return nil, fmt.Errorf("no evaluation response from AI")
 	}
 
 	responseText := ""
@@ -153,52 +265,43 @@ func (r *RerankingClient) parseRankingResponse(result *genai.GenerateContentResp
 		}
 	}
 
-	jsonStart := strings.Index(responseText, "[")
-	jsonEnd := strings.LastIndex(responseText, "]") + 1
+	evaluation, err := r.parseJobEvaluation(responseText, job)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse evaluation response: %w", err)
+	}
+
+	return evaluation, nil
+}
+
+func (r *RerankingClient) parseJobEvaluation(responseText string, job dtos.Job) (*dtos.RankedJob, error) {
+	jsonStart := strings.Index(responseText, "{")
+	jsonEnd := strings.LastIndex(responseText, "}") + 1
 
 	if jsonStart == -1 || jsonEnd == 0 {
-		return r.fallbackRanking(originalJobs), nil
+		return nil, fmt.Errorf("no JSON found in response")
 	}
 
 	jsonStr := responseText[jsonStart:jsonEnd]
 
-	var rankings []struct {
-		JobIndex        int      `json:"job_index"`
-		MatchScore      float64  `json:"match_score"`
-		MatchReason     string   `json:"match_reason"`
+	var evaluation struct {
+		MatchScore      int      `json:"match_score"`
+		Reasons         string   `json:"reasons"`
 		SkillsMatched   []string `json:"skills_matched"`
 		ExperienceMatch string   `json:"experience_match"`
-		Concerns        string   `json:"concerns,omitempty"`
 	}
 
-	err := json.Unmarshal([]byte(jsonStr), &rankings)
+	err := json.Unmarshal([]byte(jsonStr), &evaluation)
 	if err != nil {
-		fmt.Printf("Error parsing ranking JSON: %v\n", err)
-		return r.fallbackRanking(originalJobs), nil
+		return nil, fmt.Errorf("error parsing evaluation JSON: %w", err)
 	}
 
-	var rankedJobs []dtos.RankedJob
-	for _, ranking := range rankings {
-		percentMatch := ranking.MatchScore * 100.0
-
-		if ranking.JobIndex >= 0 && ranking.JobIndex < len(originalJobs) && percentMatch >= 30.0 {
-			matchReason := ranking.MatchReason
-			if ranking.Concerns != "" {
-				matchReason += " | Concerns: " + ranking.Concerns
-			}
-
-			rankedJobs = append(rankedJobs, dtos.RankedJob{
-				Job:             originalJobs[ranking.JobIndex],
-				PercentMatch:    percentMatch,
-				MatchReason:     matchReason,
-				SkillsMatched:   ranking.SkillsMatched,
-				ExperienceMatch: ranking.ExperienceMatch,
-			})
-		}
-	}
-
-	fmt.Printf("Successfully ranked %d jobs\n", len(rankedJobs))
-	return rankedJobs, nil
+	return &dtos.RankedJob{
+		Job:             job,
+		PercentMatch:    float64(evaluation.MatchScore),
+		MatchReason:     evaluation.Reasons,
+		SkillsMatched:   evaluation.SkillsMatched,
+		ExperienceMatch: evaluation.ExperienceMatch,
+	}, nil
 }
 
 func (r *RerankingClient) fallbackRanking(jobs []dtos.Job) []dtos.RankedJob {

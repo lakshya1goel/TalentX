@@ -11,13 +11,11 @@ import (
 	"github.com/lakshya1goel/job-assistance/internal/dtos"
 )
 
-// Enhanced job search with structured output
 func SearchJobsLinkUpStructured(query string) (*dtos.JobAnnouncements, error) {
 	defaultPreference := dtos.LocationPreference{Types: []string{"remote"}}
 	return SearchJobsLinkUpStructuredWithLocation(query, defaultPreference)
 }
 
-// Structured LinkUp search similar to Python implementation
 func SearchJobsLinkUpStructuredWithLocation(query string, locationPreference dtos.LocationPreference) (*dtos.JobAnnouncements, error) {
 	apiKey := os.Getenv("LINKUP_API_KEY")
 	url := os.Getenv("LINKUP_API_URL")
@@ -26,7 +24,6 @@ func SearchJobsLinkUpStructuredWithLocation(query string, locationPreference dto
 		return nil, fmt.Errorf("LINKUP_API_KEY and LINKUP_API_URL environment variables are required")
 	}
 
-	// Create structured output schema similar to Python JobAnnouncements
 	structuredSchema := map[string]interface{}{
 		"type": "object",
 		"properties": map[string]interface{}{
@@ -118,7 +115,6 @@ func SearchJobsLinkUpStructuredWithLocation(query string, locationPreference dto
 
 	var jobAnnouncements dtos.JobAnnouncements
 	if err := json.Unmarshal(respBody, &jobAnnouncements); err != nil {
-		// Fallback: try to parse as the old format and convert
 		var oldFormat struct {
 			Results []dtos.LinkupJob `json:"results"`
 		}
@@ -126,29 +122,25 @@ func SearchJobsLinkUpStructuredWithLocation(query string, locationPreference dto
 			return nil, fmt.Errorf("failed to parse structured response: %w (original error: %v)", fallbackErr, err)
 		}
 
-		// Convert old format to new structured format
 		jobAnnouncements = convertLinkupJobsToStructured(oldFormat.Results)
 	}
 
 	return &jobAnnouncements, nil
 }
 
-// Helper function to convert old LinkupJob format to structured JobDescription
 func convertLinkupJobsToStructured(linkupJobs []dtos.LinkupJob) dtos.JobAnnouncements {
 	var jobs []dtos.JobDescription
 
 	for _, linkupJob := range linkupJobs {
-		// Basic conversion with default values
-		// In a real implementation, you might want to use AI to extract structured data from the content
 		job := dtos.JobDescription{
 			JobTitle:        linkupJob.Name,
-			ExperienceLevel: "mid-level", // Default value
-			RequiredSkills:  []string{},  // Would need AI extraction from content
-			Remote:          false,       // Default value
-			Location:        nil,         // Would need extraction from content
-			Salary:          nil,         // Would need extraction from content
+			ExperienceLevel: "mid-level",
+			RequiredSkills:  []string{},
+			Remote:          false,
+			Location:        nil,
+			Salary:          nil,
 			JobPostURL:      linkupJob.URL,
-			Company:         "Unknown", // Would need extraction from content
+			Company:         "Unknown",
 		}
 		jobs = append(jobs, job)
 	}

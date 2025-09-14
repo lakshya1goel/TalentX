@@ -9,7 +9,6 @@ interface JobsListProps {
   jobs: RankedJob[];
 }
 
-// Circular Progress Ring Component
 const CircularProgress: React.FC<{ percentage: number; size?: number }> = ({ 
   percentage, 
   size = 100 
@@ -20,9 +19,9 @@ const CircularProgress: React.FC<{ percentage: number; size?: number }> = ({
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
   const getColor = (percent: number) => {
-    if (percent >= 80) return '#10b981'; // green-500
-    if (percent >= 60) return '#f59e0b'; // amber-500
-    return '#ef4444'; // red-500
+    if (percent >= 80) return '#10b981';
+    if (percent >= 60) return '#f59e0b';
+    return '#ef4444';
   };
 
   const getGradientId = (percent: number) => {
@@ -38,7 +37,6 @@ const CircularProgress: React.FC<{ percentage: number; size?: number }> = ({
         height={size}
         className="transform -rotate-90"
       >
-        {/* Gradient definitions */}
         <defs>
           <linearGradient id="greenGradient" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#34d399" stopOpacity="1" />
@@ -57,7 +55,6 @@ const CircularProgress: React.FC<{ percentage: number; size?: number }> = ({
           </linearGradient>
         </defs>
         
-        {/* Background circle */}
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -66,7 +63,6 @@ const CircularProgress: React.FC<{ percentage: number; size?: number }> = ({
           strokeWidth="8"
           fill="none"
         />
-        {/* Progress circle */}
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -83,7 +79,6 @@ const CircularProgress: React.FC<{ percentage: number; size?: number }> = ({
           }}
         />
       </svg>
-      {/* Percentage text */}
       <div className="absolute inset-0 flex items-center justify-center">
         <span className="text-sm font-bold text-white">
           {Math.round(percentage)}%
@@ -98,24 +93,21 @@ export default function JobsList({ jobs }: JobsListProps) {
   const [pageSize, setPageSize] = useState(10);
 
   const rankedJobs: RankedJob[] = useMemo(() => {
-    // Use the actual ranking data from backend instead of hardcoded fake data
     return jobs;
   }, [jobs]);
 
-  // Client-side pagination
   const paginatedData = useMemo(() => {
     return paginateArray(rankedJobs, { page: currentPage, pageSize });
   }, [rankedJobs, currentPage, pageSize]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    // Scroll to top when page changes
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handlePageSizeChange = (size: number) => {
     setPageSize(size);
-    setCurrentPage(1); // Reset to first page when changing page size
+    setCurrentPage(1);
   };
 
   if (jobs.length === 0) {
@@ -143,7 +135,6 @@ export default function JobsList({ jobs }: JobsListProps) {
         ))}
       </div>
 
-      {/* Pagination */}
       <Pagination
         currentPage={currentPage}
         totalPages={paginatedData.pagination.totalPages}
@@ -191,7 +182,6 @@ const JobCard: React.FC<{ rankedJob: RankedJob; rank: number }> = ({ rankedJob, 
           </div>
         </div>
         
-        {/* Circular Progress Ring for Percentage */}
         <div className="flex flex-col items-center gap-2 flex-shrink-0">
           <CircularProgress percentage={percent_match} size={80} />
           <span className="text-xs text-gray-400 font-medium">Match</span>
@@ -199,7 +189,6 @@ const JobCard: React.FC<{ rankedJob: RankedJob; rank: number }> = ({ rankedJob, 
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
-        {/* Why this matches */}
         <div className="space-y-2 sm:space-y-3">
           <h4 className="text-xs sm:text-sm font-semibold text-green-400 flex items-center">
             <svg className="w-3 sm:w-4 h-3 sm:h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -210,7 +199,6 @@ const JobCard: React.FC<{ rankedJob: RankedJob; rank: number }> = ({ rankedJob, 
           <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">{match_reason}</p>
         </div>
 
-        {/* Experience Match */}
         <div className="space-y-2 sm:space-y-3">
           <h4 className="text-xs sm:text-sm font-semibold text-green-400 flex items-center">
             <svg className="w-3 sm:w-4 h-3 sm:h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -222,7 +210,6 @@ const JobCard: React.FC<{ rankedJob: RankedJob; rank: number }> = ({ rankedJob, 
         </div>
       </div>
 
-      {/* Skills Matched */}
       {skills_matched.length > 0 && (
         <div className="mb-4 sm:mb-6">
           <h4 className="text-xs sm:text-sm font-semibold text-green-400 mb-2 sm:mb-3 flex items-center">
@@ -248,7 +235,6 @@ const JobCard: React.FC<{ rankedJob: RankedJob; rank: number }> = ({ rankedJob, 
         </div>
       )}
 
-      {/* Apply Button */}
       <div className="flex flex-col sm:flex-row justify-between items-center pt-3 sm:pt-4 gap-2 sm:gap-0" style={{ borderTop: '1px solid rgba(29,205,159,.2)' }}>
         <div className="text-xs text-gray-500 text-center sm:text-left">
           Click to apply on external site
