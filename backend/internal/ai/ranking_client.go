@@ -48,8 +48,6 @@ func (r *RerankingClient) RerankJobsParallel(ctx context.Context, pdfBytes []byt
 	const batchSize = 10
 	const maxConcurrency = 3
 
-	fmt.Printf("Processing %d jobs in parallel batches (size: %d, concurrency: %d)\n", len(jobs), batchSize, maxConcurrency)
-
 	var batches [][]dtos.Job
 	for i := 0; i < len(jobs); i += batchSize {
 		end := i + batchSize
@@ -58,8 +56,6 @@ func (r *RerankingClient) RerankJobsParallel(ctx context.Context, pdfBytes []byt
 		}
 		batches = append(batches, jobs[i:end])
 	}
-
-	fmt.Printf("Created %d batches for processing\n", len(batches))
 
 	semaphore := make(chan struct{}, maxConcurrency)
 	results := make(chan dtos.BatchResult, len(batches))

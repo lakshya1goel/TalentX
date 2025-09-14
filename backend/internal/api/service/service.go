@@ -29,8 +29,6 @@ func NewJobService() JobService {
 }
 
 func (s *jobService) FetchAndRankStructuredJobs(ctx context.Context, pdfBytes []byte, locationPreference dtos.LocationPreference) ([]dtos.RankedJob, error) {
-	fmt.Println("Starting structured job search flow...")
-
 	fmt.Println("Parsing resume and searching with structured output...")
 	jobs, err := s.aiClient.GetJobsFromResume(ctx, pdfBytes, locationPreference)
 	if err != nil {
@@ -47,7 +45,5 @@ func (s *jobService) FetchAndRankStructuredJobs(ctx context.Context, pdfBytes []
 	if err != nil {
 		return nil, fmt.Errorf("failed to rank structured jobs: %w", err)
 	}
-
-	fmt.Printf("Successfully processed and ranked %d structured jobs\n", len(rankedJobs))
 	return rankedJobs, nil
 }
