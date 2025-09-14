@@ -32,6 +32,16 @@ func (c *JobController) FetchStructuredJobs(ctx *gin.Context) {
 	}
 	defer file.Close()
 
+	apiKey := ctx.PostForm("api_key")
+	if apiKey == "" {
+		ctx.JSON(http.StatusBadRequest, dtos.ErrorResponse{
+			Error:     "Gemini API key is required",
+			Success:   false,
+			Timestamp: time.Now(),
+		})
+		return
+	}
+
 	contentType := header.Header.Get("Content-Type")
 	if contentType != "application/pdf" {
 		ctx.JSON(http.StatusBadRequest, dtos.ErrorResponse{
@@ -113,7 +123,7 @@ func (c *JobController) FetchStructuredJobs(ctx *gin.Context) {
 		return
 	}
 
-	rankedJobs, err := c.service.FetchAndRankStructuredJobs(ctx, pdfBytes, locationPreference)
+	rankedJobs, err := c.service.FetchAndRankStructuredJobs(ctx.Request.Context(), pdfBytes, locationPreference, apiKey)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, dtos.ErrorResponse{
 			Error:     err.Error(),

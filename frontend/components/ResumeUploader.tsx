@@ -18,6 +18,7 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
   });
   const [locationInput, setLocationInput] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [apiKey, setApiKey] = useState('');
 
   const handleFileUpload = useCallback((file: File) => {
     if (file.type !== 'application/pdf') {
@@ -40,6 +41,11 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
       return;
     }
 
+    if (!apiKey.trim()) {
+      onError('Please enter your Gemini API key.');
+      return;
+    }
+
     const needsLocation = locationPreference.types.some(type => type === 'onsite' || type === 'hybrid');
     if (needsLocation && (!locationPreference.locations || locationPreference.locations.length === 0)) {
       onError('Please specify at least one location for onsite or hybrid positions.');
@@ -49,14 +55,14 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
     try {
       onLoading(true);
       onError('');
-      const rankedJobs = await uploadResumeAndGetJobs(selectedFile, locationPreference);
+      const rankedJobs = await uploadResumeAndGetJobs(selectedFile, locationPreference, apiKey.trim());
       onJobsReceived(rankedJobs);
     } catch (error) {
       onError(error instanceof Error ? error.message : 'An error occurred while processing your resume.');
     } finally {
       onLoading(false);
     }
-  }, [selectedFile, locationPreference, onJobsReceived, onError, onLoading]);
+  }, [selectedFile, locationPreference, apiKey, onJobsReceived, onError, onLoading]);
 
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -122,6 +128,46 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4 sm:space-y-6 px-4 sm:px-0">
+      <div className="p-4 sm:p-6 rounded-xl backdrop-blur-sm" style={{
+        background: 'linear-gradient(135deg, rgba(10,10,10,0.8), rgba(26,26,26,0.8))',
+        border: '1px solid rgba(29,205,159,.2)'
+      }}>
+        <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4 flex items-center">
+          <svg className="w-4 sm:w-5 h-4 sm:h-5 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m0 0a2 2 0 012 2m-2-2v6a2 2 0 01-2 2H9a2 2 0 01-2-2V9a2 2 0 012-2h6z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2" />
+          </svg>
+          Gemini API Key
+        </h3>
+        <div className="space-y-2">
+          <label className="text-xs sm:text-sm font-medium text-gray-300 block">
+            Enter your Google Gemini API Key
+          </label>
+          <input
+            type="password"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            placeholder="AIza..."
+            className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg text-white placeholder-gray-400 border-0 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+            style={{
+              background: 'rgba(10,10,10,0.6)',
+              border: '1px solid rgba(29,205,159,.2)'
+            }}
+          />
+          <p className="text-xs text-gray-400">
+            Get your API key from{' '}
+            <a 
+              href="https://makersuite.google.com/app/apikey" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-green-400 hover:text-green-300 underline"
+            >
+              Google AI Studio
+            </a>
+          </p>
+        </div>
+      </div>
+
       {/* Location Preferences */}
       <div className="p-4 sm:p-6 rounded-xl backdrop-blur-sm" style={{
         background: 'linear-gradient(135deg, rgba(10,10,10,0.8), rgba(26,26,26,0.8))',
