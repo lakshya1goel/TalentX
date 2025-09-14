@@ -110,7 +110,7 @@ export default function JobsList({ jobs }: JobsListProps) {
     setCurrentPage(1);
   };
 
-  if (jobs.length === 0) {
+  if (jobs?.length === 0) {
     return null;
   }
 
@@ -118,7 +118,7 @@ export default function JobsList({ jobs }: JobsListProps) {
     <div className="w-full max-w-6xl mx-auto mt-6 sm:mt-8 px-4 sm:px-0">
       <div className="mb-6 sm:mb-8 text-center">
         <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-          Found {jobs.length} matching job{jobs.length !== 1 ? 's' : ''}
+          Found {jobs?.length} matching job{jobs?.length !== 1 ? 's' : ''}
         </h2>
         <p className="text-sm sm:text-base text-gray-400">
           Jobs tailored to your resume and experience, ranked by relevance
@@ -141,7 +141,7 @@ export default function JobsList({ jobs }: JobsListProps) {
         onPageChange={handlePageChange}
         pageSize={pageSize}
         onPageSizeChange={handlePageSizeChange}
-        totalItems={jobs.length}
+        totalItems={jobs?.length || 0 }
       />
     </div>
   );
@@ -151,7 +151,7 @@ const JobCard: React.FC<{ rankedJob: RankedJob; rank: number }> = ({ rankedJob, 
   const { job, percent_match, match_reason, skills_matched, experience_match } = rankedJob;
   const [showMore, setShowMore] = useState(false);
 
-  const shouldTruncate = match_reason.length > 100;
+  const shouldTruncate = match_reason?.length > 100;
   const displayedReason = showMore || !shouldTruncate
     ? match_reason
     : match_reason.slice(0, 100) + (shouldTruncate ? '...' : '');
@@ -226,7 +226,7 @@ const JobCard: React.FC<{ rankedJob: RankedJob; rank: number }> = ({ rankedJob, 
         </div>
       </div>
 
-      {skills_matched.length > 0 && (
+      {skills_matched?.length > 0 && (
         <div className="mb-4 sm:mb-6">
           <h4 className="text-xs sm:text-sm font-semibold text-green-400 mb-2 sm:mb-3 flex items-center">
             <svg className="w-3 sm:w-4 h-3 sm:h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

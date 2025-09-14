@@ -47,7 +47,7 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
     }
 
     const needsLocation = locationPreference.types.some(type => type === 'onsite' || type === 'hybrid');
-    if (needsLocation && (!locationPreference.locations || locationPreference.locations.length === 0)) {
+    if (needsLocation && (!locationPreference.locations || locationPreference.locations?.length === 0)) {
       onError('Please specify at least one location for onsite or hybrid positions.');
       return;
     }
@@ -69,7 +69,7 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
     setIsDragOver(false);
     
     const files = e.dataTransfer.files;
-    if (files.length > 0) {
+    if (files?.length > 0) {
       handleFileUpload(files[0]);
     }
   }, [handleFileUpload]);
@@ -86,7 +86,7 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
 
   const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files && files.length > 0) {
+    if (files && files?.length > 0) {
       handleFileUpload(files[0]);
     }
   }, [handleFileUpload]);
@@ -239,7 +239,7 @@ export default function ResumeUploader({ onJobsReceived, onError, onLoading }: R
                 </button>
               </div>
               
-              {locationPreference.locations && locationPreference.locations.length > 0 && (
+              {locationPreference.locations && locationPreference.locations?.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {locationPreference.locations.map((location, index) => (
                     <span

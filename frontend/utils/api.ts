@@ -34,7 +34,7 @@ export async function uploadResumeAndGetJobs(
     formData.append('location_types', type);
   });
   
-  if (locationPreference.locations && locationPreference.locations.length > 0) {
+  if (locationPreference.locations && locationPreference.locations?.length > 0) {
     locationPreference.locations.forEach(location => {
       formData.append('locations', location);
     });
@@ -75,7 +75,7 @@ export function paginateArray<T>(
   array: T[], 
   { page, pageSize }: PaginationParams
 ): PaginatedResult<T> {
-  const total = array.length;
+  const total = array?.length || 0;
   const totalPages = Math.ceil(total / pageSize);
   const startIndex = (page - 1) * pageSize;
   const endIndex = Math.min(startIndex + pageSize, total);

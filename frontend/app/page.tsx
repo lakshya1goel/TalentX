@@ -198,11 +198,11 @@ export default function Home() {
             </div>
           )}
 
-          {!loading && jobs.length > 0 && (
+          {!loading && jobs?.length > 0 && (
             <JobsList jobs={jobs} />
           )}
 
-          {!loading && jobs.length === 0 && !error && !showUploader && (
+          {!loading && jobs?.length === 0 && !error && !showUploader && (
             <div className="text-center mt-12">
               <svg
                 className="mx-auto h-12 w-12 text-gray-500"
