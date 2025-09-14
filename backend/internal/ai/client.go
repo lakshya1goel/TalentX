@@ -3,6 +3,7 @@ package ai
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/lakshya1goel/job-assistance/internal/dtos"
@@ -25,7 +26,8 @@ func NewAIClient(ctx context.Context, apiKey string) *AIClient {
 }
 
 func (a *AIClient) GetJobsFromResume(ctx context.Context, pdfBytes []byte, locationPreference dtos.LocationPreference) ([]dtos.Job, error) {
-	prompt := a.PromptWithLocation(locationPreference)
+	parsedLocationPreference := a.parseLocationPreference(locationPreference)
+	prompt := a.Prompt(parsedLocationPreference)
 
 	parts := []*genai.Part{
 		{
@@ -56,7 +58,6 @@ func (a *AIClient) GetJobsFromResume(ctx context.Context, pdfBytes []byte, locat
 		return nil, fmt.Errorf("failed to generate content: %w", err)
 	}
 
-	fmt.Println("Processing AI response...")
 	var functionCalls []*genai.FunctionCall
 	for _, candidate := range result.Candidates {
 		for _, part := range candidate.Content.Parts {
@@ -106,12 +107,21 @@ func (a *AIClient) executeParallelJobSearch(functionCalls []*genai.FunctionCall)
 					Source: "JSearch",
 				}
 
-			case "search_linkup_jobs":
-				jobs, err := SearchJobsLinkUp(query)
-				results <- dtos.JobSearchResult{
-					Jobs:   jobs,
-					Error:  err,
-					Source: "LinkUp",
+			case "search_structured_jobs":
+				structuredJobs, err := SearchJobsLinkUpStructured(query)
+				if err != nil {
+					results <- dtos.JobSearchResult{
+						Jobs:   []dtos.Job{},
+						Error:  err,
+						Source: "LinkUp-Structured",
+					}
+				} else {
+					jobs := convertStructuredToRegularJobs(structuredJobs)
+					results <- dtos.JobSearchResult{
+						Jobs:   jobs,
+						Error:  nil,
+						Source: "LinkUp-Structured",
+					}
 				}
 
 			default:
@@ -140,6 +150,48 @@ func (a *AIClient) executeParallelJobSearch(functionCalls []*genai.FunctionCall)
 		}
 	}
 
-	fmt.Printf("Total jobs found across all sources: %d\n", len(allJobs))
 	return allJobs
+}
+
+func (a *AIClient) parseLocationPreference(locationPreference dtos.LocationPreference) string {
+	locationContext := ""
+	if len(locationPreference.Types) > 0 {
+		locationContext = fmt.Sprintf("\nWork arrangement preferences: %s", strings.Join(locationPreference.Types, ", "))
+		if len(locationPreference.Locations) > 0 {
+			locationContext += fmt.Sprintf("\nPreferred locations: %s", strings.Join(locationPreference.Locations, ", "))
+		}
+	}
+
+	return locationContext
+}
+
+func convertStructuredToRegularJobs(structuredJobs *dtos.JobAnnouncements) []dtos.Job {
+	var jobs []dtos.Job
+
+	for _, structJob := range structuredJobs.Jobs {
+		location := "Remote"
+		if !structJob.Remote && structJob.Location != nil {
+			location = *structJob.Location
+		}
+
+		description := fmt.Sprintf("Experience Level: %s\nRequired Skills: %s",
+			structJob.ExperienceLevel,
+			strings.Join(structJob.RequiredSkills, ", "),
+		)
+
+		if structJob.Salary != nil {
+			description += fmt.Sprintf("\nSalary: $%d", *structJob.Salary)
+		}
+
+		jobs = append(jobs, dtos.Job{
+			Title:       structJob.JobTitle,
+			Company:     structJob.Company,
+			Location:    location,
+			Description: description,
+			URL:         structJob.JobPostURL,
+			Source:      "LinkUp-Structured",
+		})
+	}
+
+	return jobs
 }

@@ -4,47 +4,41 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/lakshya1goel/job-assistance/config"
 	"github.com/lakshya1goel/job-assistance/internal/ai"
 	"github.com/lakshya1goel/job-assistance/internal/dtos"
 )
 
 type JobService interface {
-	FetchAndRankAllJobs(ctx context.Context, pdfBytes []byte, locationPreference dtos.LocationPreference) ([]dtos.RankedJob, error)
+	FetchAndRankStructuredJobs(ctx context.Context, pdfBytes []byte, locationPreference dtos.LocationPreference, apiKey string) ([]dtos.RankedJob, error)
 }
 
 type jobService struct {
-	aiClient      *ai.AIClient
-	rankingClient *ai.RerankingClient
 }
 
 func NewJobService() JobService {
-	ctx := context.Background()
-	apiKey := config.GetAPIKey()
-
-	return &jobService{
-		aiClient:      ai.NewAIClient(ctx, apiKey),
-		rankingClient: ai.NewRerankingClient(ctx, apiKey),
-	}
+	return &jobService{}
 }
 
-func (s *jobService) FetchAndRankAllJobs(ctx context.Context, pdfBytes []byte, locationPreference dtos.LocationPreference) ([]dtos.RankedJob, error) {
-	fmt.Println("Fetching jobs from various sources...")
-	jobs, err := s.aiClient.GetJobsFromResume(ctx, pdfBytes, locationPreference)
+func (s *jobService) FetchAndRankStructuredJobs(ctx context.Context, pdfBytes []byte, locationPreference dtos.LocationPreference, apiKey string) ([]dtos.RankedJob, error) {
+	fmt.Println("Parsing resume and searching with structured output...")
+
+	aiClient := ai.NewAIClient(ctx, apiKey)
+	rankingClient := ai.NewRerankingClient(ctx, apiKey)
+
+	jobs, err := aiClient.GetJobsFromResume(ctx, pdfBytes, locationPreference)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch jobs: %w", err)
+		return nil, fmt.Errorf("failed to get structured jobs from resume: %w", err)
 	}
 
 	if len(jobs) == 0 {
+		fmt.Println("No jobs found from structured search")
 		return []dtos.RankedJob{}, nil
 	}
 
-	fmt.Printf("Ranking %d jobs based on resume relevance...\n", len(jobs))
-	rankedJobs, err := s.rankingClient.RerankJobs(ctx, pdfBytes, jobs)
+	fmt.Printf("Re-ranking %d structured jobs based on resume relevance...\n", len(jobs))
+	rankedJobs, err := rankingClient.RerankJobs(ctx, pdfBytes, jobs)
 	if err != nil {
-		return nil, fmt.Errorf("failed to rank jobs: %w", err)
+		return nil, fmt.Errorf("failed to rank structured jobs: %w", err)
 	}
-
-	fmt.Printf("Successfully processed and ranked %d jobs\n", len(rankedJobs))
 	return rankedJobs, nil
 }

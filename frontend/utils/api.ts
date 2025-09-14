@@ -23,10 +23,12 @@ export interface JobSearchResponse {
 
 export async function uploadResumeAndGetJobs(
   file: File, 
-  locationPreference: LocationPreference
+  locationPreference: LocationPreference,
+  apiKey: string
 ): Promise<RankedJob[]> {
   const formData = new FormData();
   formData.append('resume', file);
+  formData.append('api_key', apiKey);
   
   locationPreference.types.forEach(type => {
     formData.append('location_types', type);
