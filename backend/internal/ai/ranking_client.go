@@ -43,6 +43,8 @@ func (r *RerankingClient) RerankJobs(ctx context.Context, pdfBytes []byte, jobs 
 		return r.fallbackRanking(jobs), nil
 	}
 
+	fmt.Println("Candidate profile: ", candidateProfile)
+
 	if len(jobs) > 10 {
 		return r.RerankJobsParallel(ctx, candidateProfile, jobs)
 	}
@@ -56,7 +58,6 @@ You are a resume analyzer. Extract and summarize the candidate's profile from th
 
 Provide a comprehensive summary including:
 - Job titles they would be suitable for
-- Seniority level (internship, entry level, junior, mid-level, senior)
 - Technical skills and expertise areas
 - Years of professional experience
 - Education background
@@ -64,6 +65,8 @@ Provide a comprehensive summary including:
 - Work location preferences (remote/hybrid/on-site)
 - Industry experience
 - Notable projects or achievements
+
+NOTE: Do not consider internships as professional experience. They are treated as fresher. So look for internships and entry level jobs.
 
 Format this as a clear, structured profile summary.
 `
@@ -113,41 +116,38 @@ Format this as a clear, structured profile summary.
 func (r *RerankingClient) RerankJobsParallel(ctx context.Context, candidateProfile string, jobs []dtos.Job) ([]dtos.RankedJob, error) {
 	const batchSize = 10
 	const maxConcurrency = 3
-
+	
 	var batches [][]dtos.Job
 	for i := 0; i < len(jobs); i += batchSize {
-		end := i + batchSize
-		if end > len(jobs) {
-			end = len(jobs)
-		}
+		end := min(i + batchSize, len(jobs))
 		batches = append(batches, jobs[i:end])
 	}
 
-	semaphore := make(chan struct{}, maxConcurrency)
+	monitorConcurrency := make(chan struct{}, maxConcurrency)
 	results := make(chan dtos.BatchResult, len(batches))
 	var wg sync.WaitGroup
 
 	for batchIndex, batch := range batches {
 		wg.Add(1)
-		go func(batchIdx int, jobBatch []dtos.Job) {
+		go func(idx int, jobBatch []dtos.Job) {
 			defer wg.Done()
-
-			semaphore <- struct{}{}
-			defer func() { <-semaphore }()
-
-			fmt.Printf("Processing batch %d with %d jobs\n", batchIdx+1, len(jobBatch))
+			
+			monitorConcurrency <- struct{}{}
+			defer func() { <-monitorConcurrency }()
+			
+			fmt.Printf("Processing batch %d with %d jobs\n", idx+1, len(jobBatch))
 
 			rankedBatch, err := r.rerankJobsSingle(ctx, candidateProfile, jobBatch)
 			if err != nil {
-				fmt.Printf("Error ranking batch %d: %v, using fallback\n", batchIdx+1, err)
+				fmt.Printf("Error ranking batch %d: %v, using fallback\n", idx+1, err)
 				rankedBatch = r.fallbackRanking(jobBatch)
 			}
 
-			fmt.Printf("Completed batch %d with %d ranked jobs\n", batchIdx+1, len(rankedBatch))
+			fmt.Printf("Completed batch %d with %d ranked jobs\n", idx+1, len(rankedBatch))
 
 			results <- dtos.BatchResult{
 				Jobs:       rankedBatch,
-				BatchIndex: batchIdx,
+				BatchIndex: idx,
 			}
 		}(batchIndex, batch)
 	}

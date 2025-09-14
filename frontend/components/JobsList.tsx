@@ -149,6 +149,12 @@ export default function JobsList({ jobs }: JobsListProps) {
 
 const JobCard: React.FC<{ rankedJob: RankedJob; rank: number }> = ({ rankedJob, rank }) => {
   const { job, percent_match, match_reason, skills_matched, experience_match } = rankedJob;
+  const [showMore, setShowMore] = useState(false);
+
+  const shouldTruncate = match_reason.length > 100;
+  const displayedReason = showMore || !shouldTruncate
+    ? match_reason
+    : match_reason.slice(0, 100) + (shouldTruncate ? '...' : '');
 
   return (
     <div 
@@ -196,7 +202,17 @@ const JobCard: React.FC<{ rankedJob: RankedJob; rank: number }> = ({ rankedJob, 
             </svg>
             Why this matches
           </h4>
-          <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">{match_reason}</p>
+          <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
+            {displayedReason}
+          </p>
+          {shouldTruncate && (
+            <button
+              className="text-xs sm:text-sm text-gray-400"
+              onClick={() => setShowMore((prev) => !prev)}
+            >
+              {showMore ? 'Show less' : 'Show more'}
+            </button>
+          )}
         </div>
 
         <div className="space-y-2 sm:space-y-3">
