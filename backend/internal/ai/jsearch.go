@@ -63,5 +63,8 @@ func SearchJobsJSearchWithLocation(query string, locationPreference dtos.Locatio
 			Source:   "JSearch",
 		})
 	}
-	return jobs[:10], nil
+	if len(jobs) > 10 {
+		return jobs[:10], nil
+	}
+	return jobs, nil
 }
