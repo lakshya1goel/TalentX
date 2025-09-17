@@ -23,7 +23,7 @@ func SearchJobsJSearchWithLocation(query string, locationPreference dtos.Locatio
 	baseURL := fmt.Sprintf("https://%s/search", host)
 	params := url.Values{}
 	params.Add("query", query)
-	params.Add("num_pages", "5")
+	params.Add("num_pages", "10")
 
 	fullURL := baseURL + "?" + params.Encode()
 
