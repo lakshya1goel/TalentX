@@ -157,6 +157,7 @@ Based on the candidate profile above, execute comprehensive job searches using t
 	- Role preferences and technical expertise identified in the profile
 	- Industry background and specializations mentioned in the profile
 	- Work arrangement and location preferences from the profile
+NOTE: If location preferences are mentioned, make sure to include the location in the job description.
 
 	Example: "Senior Software Engineer with 5+ years experience in Python, Django, React, and AWS. Looking for backend or full-stack roles in fintech or healthcare. Strong experience with microservices, API development, and cloud infrastructure."
 
@@ -168,6 +169,7 @@ Based on the candidate profile above, execute comprehensive job searches using t
 	- Role-specific searches based on suitable job titles in profile (e.g., "Full Stack Developer", "DevOps Engineer", "Data Scientist")
 	- Industry-specific roles based on industry experience in profile (e.g., "Software Engineer Fintech", "Developer Healthcare")
 	- Career progression searches based on career stage in profile (e.g., "Lead Developer", "Principal Engineer")
+  - IMPORTANT: Include different locations for each job search if location preferences are mentioned. Make sure to include the location in query.
 	
 **MANDATORY EXECUTION SEQUENCE - FOLLOW EXACTLY:**
 
