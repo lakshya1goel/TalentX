@@ -119,37 +119,7 @@ func (r *RankingClient) rankBatchJobs(ctx context.Context, candidateProfile stri
 		jobsJSON = append(jobsJSON, string(jobJSON))
 	}
 
-	systemMessage := `You are a job matching assistant. Your task is to evaluate multiple jobs based on their match with the candidate's profile, taking into account the job title, the skills required, the seniority level, the physical location (where the company offering the work is based in) and the working location (remote/hybrid/on-site). You then have to produce a match score (between 0 and 100) for each job and justify that match score explaining your reasons.
-
-	Evaluation Criteria:
-	1. Job title alignment with candidate's potential roles
-	2. Required skills match with candidate's skills
-	3. Seniority level alignment (internship, entry level, junior, mid-level, senior)
-	4. Location preferences and work arrangement compatibility
-	5. Industry and domain experience relevance
-	6. Overall career trajectory fit
-
-	Provide your evaluation in the following JSON format for ALL jobs:
-	{
-		"evaluations": [
-			{
-				"job_index": 0,
-				"match_score": <integer between 0-100>,
-				"reasons": "<detailed explanation of the match evaluation>",
-				"skills_matched": ["<list of matched skills>"],
-				"experience_match": "<assessment of experience level fit>"
-			},
-			{
-				"job_index": 1,
-				"match_score": <integer between 0-100>,
-				"reasons": "<detailed explanation of the match evaluation>",
-				"skills_matched": ["<list of matched skills>"],
-				"experience_match": "<assessment of experience level fit>"
-			}
-		]
-	}
-
-	IMPORTANT: Provide evaluations for ALL jobs in the same order they are presented. Use job_index to match each evaluation to its corresponding job.`
+	systemMessage := r.RankingPrompt()
 
 	jobsListStr := ""
 	for i, jobJSON := range jobsJSON {

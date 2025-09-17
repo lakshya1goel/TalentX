@@ -9,8 +9,7 @@ import (
 )
 
 type ProfileClient struct {
-	Client   *genai.Client
-	aiClient *JobClient
+	Client *genai.Client
 }
 
 func NewProfileClient(ctx context.Context, apiKey string) *ProfileClient {
@@ -22,13 +21,12 @@ func NewProfileClient(ctx context.Context, apiKey string) *ProfileClient {
 	}
 
 	return &ProfileClient{
-		Client:   client,
-		aiClient: &JobClient{},
+		Client: client,
 	}
 }
 
 func (p *ProfileClient) ExtractCandidateProfile(ctx context.Context, pdfBytes []byte, locationPreference dtos.LocationPreference) (string, error) {
-	prompt := p.aiClient.CandidateProfilePrompt(locationPreference)
+	prompt := p.CandidateProfilePrompt(locationPreference)
 
 	parts := []*genai.Part{
 		{
@@ -47,7 +45,7 @@ func (p *ProfileClient) ExtractCandidateProfile(ctx context.Context, pdfBytes []
 	temp := float32(0.1)
 	result, err := p.Client.Models.GenerateContent(
 		ctx,
-		"gemini-2.0-flash-lite",
+		"gemini-2.0-flash",
 		contents,
 		&genai.GenerateContentConfig{
 			Temperature: &temp,
