@@ -10,11 +10,11 @@ import (
 	"google.golang.org/genai"
 )
 
-type AIClient struct {
+type JobClient struct {
 	Client *genai.Client
 }
 
-func NewAIClient(ctx context.Context, apiKey string) *AIClient {
+func NewAIClient(ctx context.Context, apiKey string) *JobClient {
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
 		APIKey: apiKey,
 	})
@@ -22,18 +22,17 @@ func NewAIClient(ctx context.Context, apiKey string) *AIClient {
 		fmt.Println(err)
 	}
 
-	return &AIClient{Client: client}
+	return &JobClient{Client: client}
 }
 
-func (a *AIClient) GetJobsFromResume(ctx context.Context, pdfBytes []byte, locationPreference dtos.LocationPreference) ([]dtos.Job, error) {
-	parsedLocationPreference := a.parseLocationPreference(locationPreference)
-	prompt := a.Prompt(parsedLocationPreference)
+func (a *JobClient) GetJobsFromResume(ctx context.Context, profile string) ([]dtos.Job, error) {
+	prompt := a.JobSearchPrompt(profile)
 
 	parts := []*genai.Part{
 		{
 			InlineData: &genai.Blob{
-				MIMEType: "application/pdf",
-				Data:     pdfBytes,
+				MIMEType: "text/plain",
+				Data:     []byte(profile),
 			},
 		},
 		genai.NewPartFromText(prompt),
@@ -76,7 +75,7 @@ func (a *AIClient) GetJobsFromResume(ctx context.Context, pdfBytes []byte, locat
 	return a.executeParallelJobSearch(functionCalls), nil
 }
 
-func (a *AIClient) executeParallelJobSearch(functionCalls []*genai.FunctionCall) []dtos.Job {
+func (a *JobClient) executeParallelJobSearch(functionCalls []*genai.FunctionCall) []dtos.Job {
 	var wg sync.WaitGroup
 	results := make(chan dtos.JobSearchResult, len(functionCalls))
 
@@ -151,18 +150,6 @@ func (a *AIClient) executeParallelJobSearch(functionCalls []*genai.FunctionCall)
 	}
 
 	return allJobs
-}
-
-func (a *AIClient) parseLocationPreference(locationPreference dtos.LocationPreference) string {
-	locationContext := ""
-	if len(locationPreference.Types) > 0 {
-		locationContext = fmt.Sprintf("\nWork arrangement preferences: %s", strings.Join(locationPreference.Types, ", "))
-		if len(locationPreference.Locations) > 0 {
-			locationContext += fmt.Sprintf("\nPreferred locations: %s", strings.Join(locationPreference.Locations, ", "))
-		}
-	}
-
-	return locationContext
 }
 
 func convertStructuredToRegularJobs(structuredJobs *dtos.JobAnnouncements) []dtos.Job {

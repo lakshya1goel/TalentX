@@ -12,11 +12,11 @@ import (
 	"google.golang.org/genai"
 )
 
-type RerankingClient struct {
+type RankingClient struct {
 	Client *genai.Client
 }
 
-func NewRerankingClient(ctx context.Context, apiKey string) *RerankingClient {
+func NewRerankingClient(ctx context.Context, apiKey string) *RankingClient {
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
 		APIKey: apiKey,
 	})
@@ -24,10 +24,10 @@ func NewRerankingClient(ctx context.Context, apiKey string) *RerankingClient {
 		fmt.Printf("Error creating reranking client: %v\n", err)
 	}
 
-	return &RerankingClient{Client: client}
+	return &RankingClient{Client: client}
 }
 
-func (r *RerankingClient) RerankJobs(ctx context.Context, pdfBytes []byte, jobs []dtos.Job) ([]dtos.RankedJob, error) {
+func (r *RankingClient) RerankJobs(ctx context.Context, profile string, jobs []dtos.Job) ([]dtos.RankedJob, error) {
 	if len(jobs) == 0 {
 		return []dtos.RankedJob{}, nil
 	}
@@ -37,83 +37,14 @@ func (r *RerankingClient) RerankJobs(ctx context.Context, pdfBytes []byte, jobs 
 		jobs = jobs[:60]
 	}
 
-	candidateProfile, err := r.extractCandidateProfile(ctx, pdfBytes)
-	if err != nil {
-		fmt.Printf("Error extracting candidate profile: %v\n", err)
-		return r.fallbackRanking(jobs), nil
-	}
-
-	fmt.Println("Candidate profile: ", candidateProfile)
-
 	if len(jobs) > 10 {
-		return r.RerankJobsParallel(ctx, candidateProfile, jobs)
+		return r.RerankJobsParallel(ctx, profile, jobs)
 	}
 
-	return r.rankBatchJobs(ctx, candidateProfile, jobs)
+	return r.rankBatchJobs(ctx, profile, jobs)
 }
 
-func (r *RerankingClient) extractCandidateProfile(ctx context.Context, pdfBytes []byte) (string, error) {
-	prompt := `
-You are a resume analyzer. Extract and summarize the candidate's profile from their resume.
-
-Provide a comprehensive summary including:
-- Job titles they would be suitable for
-- Technical skills and expertise areas
-- Years of professional experience
-- Education background
-- Location preferences (if mentioned)
-- Work location preferences (remote/hybrid/on-site)
-- Industry experience
-- Notable projects or achievements
-
-NOTE: Do not consider internships as professional experience. They are treated as fresher. So look for internships and entry level jobs.
-
-Format this as a clear, structured profile summary.
-`
-
-	parts := []*genai.Part{
-		{
-			InlineData: &genai.Blob{
-				MIMEType: "application/pdf",
-				Data:     pdfBytes,
-			},
-		},
-		genai.NewPartFromText(prompt),
-	}
-
-	contents := []*genai.Content{
-		genai.NewContentFromParts(parts, genai.RoleUser),
-	}
-
-	temp := float32(0.1)
-	result, err := r.Client.Models.GenerateContent(
-		ctx,
-		"gemini-1.5-flash",
-		contents,
-		&genai.GenerateContentConfig{
-			Temperature: &temp,
-		},
-	)
-
-	if err != nil {
-		return "", fmt.Errorf("failed to extract candidate profile: %w", err)
-	}
-
-	if len(result.Candidates) == 0 || len(result.Candidates[0].Content.Parts) == 0 {
-		return "", fmt.Errorf("no profile response from AI")
-	}
-
-	profileText := ""
-	for _, part := range result.Candidates[0].Content.Parts {
-		if part.Text != "" {
-			profileText += part.Text
-		}
-	}
-
-	return profileText, nil
-}
-
-func (r *RerankingClient) RerankJobsParallel(ctx context.Context, candidateProfile string, jobs []dtos.Job) ([]dtos.RankedJob, error) {
+func (r *RankingClient) RerankJobsParallel(ctx context.Context, candidateProfile string, jobs []dtos.Job) ([]dtos.RankedJob, error) {
 	const batchSize = 10
 	const maxConcurrency = 3
 
@@ -173,7 +104,7 @@ func (r *RerankingClient) RerankJobsParallel(ctx context.Context, candidateProfi
 	return allRanked, nil
 }
 
-func (r *RerankingClient) rankBatchJobs(ctx context.Context, candidateProfile string, jobs []dtos.Job) ([]dtos.RankedJob, error) {
+func (r *RankingClient) rankBatchJobs(ctx context.Context, candidateProfile string, jobs []dtos.Job) ([]dtos.RankedJob, error) {
 	if len(jobs) == 0 {
 		return []dtos.RankedJob{}, nil
 	}
@@ -288,7 +219,7 @@ func (r *RerankingClient) rankBatchJobs(ctx context.Context, candidateProfile st
 	return filteredJobs, nil
 }
 
-func (r *RerankingClient) parseBatchJobEvaluation(responseText string, jobs []dtos.Job) ([]dtos.RankedJob, error) {
+func (r *RankingClient) parseBatchJobEvaluation(responseText string, jobs []dtos.Job) ([]dtos.RankedJob, error) {
 	jsonStart := strings.Index(responseText, "{")
 	jsonEnd := strings.LastIndex(responseText, "}") + 1
 
@@ -357,7 +288,7 @@ func (r *RerankingClient) parseBatchJobEvaluation(responseText string, jobs []dt
 	return rankedJobs, nil
 }
 
-func (r *RerankingClient) fallbackRanking(jobs []dtos.Job) []dtos.RankedJob {
+func (r *RankingClient) fallbackRanking(jobs []dtos.Job) []dtos.RankedJob {
 	fmt.Println("Using fallback ranking - returning jobs in original order")
 	var rankedJobs []dtos.RankedJob
 

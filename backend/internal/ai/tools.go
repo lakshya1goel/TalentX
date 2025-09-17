@@ -2,7 +2,7 @@ package ai
 
 import "google.golang.org/genai"
 
-func (a *AIClient) Tools() []*genai.Tool {
+func (a *JobClient) Tools() []*genai.Tool {
 	tools := []*genai.Tool{
 		{
 			FunctionDeclarations: []*genai.FunctionDeclaration{

@@ -20,12 +20,18 @@ func NewJobService() JobService {
 }
 
 func (s *jobService) FetchAndRankStructuredJobs(ctx context.Context, pdfBytes []byte, locationPreference dtos.LocationPreference, apiKey string) ([]dtos.RankedJob, error) {
-	fmt.Println("Parsing resume and searching with structured output...")
-
+	profileClient := ai.NewProfileClient(ctx, apiKey)
 	aiClient := ai.NewAIClient(ctx, apiKey)
 	rankingClient := ai.NewRerankingClient(ctx, apiKey)
 
-	jobs, err := aiClient.GetJobsFromResume(ctx, pdfBytes, locationPreference)
+	profile, err := profileClient.ExtractCandidateProfile(ctx, pdfBytes, locationPreference)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract candidate profile: %w", err)
+	}
+
+	fmt.Println("Profile: ", profile)
+
+	jobs, err := aiClient.GetJobsFromResume(ctx, profile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get structured jobs from resume: %w", err)
 	}
@@ -36,7 +42,7 @@ func (s *jobService) FetchAndRankStructuredJobs(ctx context.Context, pdfBytes []
 	}
 
 	fmt.Printf("Re-ranking %d structured jobs based on resume relevance...\n", len(jobs))
-	rankedJobs, err := rankingClient.RerankJobs(ctx, pdfBytes, jobs)
+	rankedJobs, err := rankingClient.RerankJobs(ctx, profile, jobs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to rank structured jobs: %w", err)
 	}
