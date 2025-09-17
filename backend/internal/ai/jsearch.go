@@ -63,5 +63,5 @@ func SearchJobsJSearchWithLocation(query string, locationPreference dtos.Locatio
 			Source:   "JSearch",
 		})
 	}
-	return jobs, nil
+	return jobs[:10], nil
 }
