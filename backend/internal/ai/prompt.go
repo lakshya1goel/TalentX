@@ -169,7 +169,7 @@ NOTE: If location preferences are mentioned, make sure to include the location i
 	- Role-specific searches based on suitable job titles in profile (e.g., "Full Stack Developer", "DevOps Engineer", "Data Scientist")
 	- Industry-specific roles based on industry experience in profile (e.g., "Software Engineer Fintech", "Developer Healthcare")
 	- Career progression searches based on career stage in profile (e.g., "Lead Developer", "Principal Engineer")
-  - IMPORTANT: Include different locations for each job search if location preferences are mentioned. Make sure to include the location in query.
+  - IMPORTANT: Include different locations for each job search if location preferences are mentioned. If Remote and hybrid are also mntioned them make 5 queries for remote and 2 queries for onsite only.
 	
 **MANDATORY EXECUTION SEQUENCE - FOLLOW EXACTLY:**
 
